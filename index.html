@@ -4,6 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Meu Feed — Central de Notícias</title>
+  <link rel="icon" type="image/png" href="logo.png">
   <link rel="stylesheet" href="./style.css">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -34,12 +35,11 @@
   </div>
 
   <!-- CABEÇALHO COM BOTÃO HOME E ALTERNADOR OLED -->
-  <header class="app-header">
-    <div class="header-container">
-      <div class="brand-zone" id="brand-home-btn" style="cursor: pointer;" title="Voltar ao início">
-        <h1>Meu <span>Feed</span></h1>
-        <span id="sync-status" class="sync-status">🏠 Início / Sincronizado</span>
-      </div>
+  <div class="brand-zone" id="brand-home-btn" style="cursor: pointer;" title="Voltar ao início">
+  <img src="logo.png" alt="Logo Meu Feed" style="height: 32px; width: auto; vertical-align: middle; margin-right: 8px;">
+  <h1>Meu <span>Feed</span></h1>
+  <span id="sync-status" class="sync-status">🏠 Início / Sincronizado</span>
+</div>
 
       <div class="header-actions">
         <!-- Botão 5: Alternador de Modo OLED / Tema Escuro -->
