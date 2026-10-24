@@ -4,8 +4,11 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Meu Feed — Central de Notícias</title>
+  
+  <!-- FAVICON (Ícone da aba do navegador) -->
   <link rel="icon" type="image/png" href="./logo.png">
-  <img src="./logo.png" alt="Logo Meu Feed" style="height: 32px; width: auto; vertical-align: middle; margin-right: 8px;">
+  
+  <!-- ESTILOS E FONTE -->
   <link rel="stylesheet" href="./style.css">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -35,17 +38,22 @@
     </div>
   </div>
 
-  <!-- CABEÇALHO COM BOTÃO HOME E ALTERNADOR OLED -->
-  <div class="brand-zone" id="brand-home-btn" style="cursor: pointer; display: flex; align-items: center; gap: 10px;" title="Voltar ao início">
-  <img src="./logo.png" alt="Logo Meu Feed" style="height: 36px; width: auto; object-fit: contain;">
-  <div style="display: flex; flex-direction: column;">
-    <h1 style="margin: 0; line-height: 1;">Meu <span>Feed</span></h1>
-    <span id="sync-status" class="sync-status" style="margin-top: 4px;">🏠 Início / Sincronizado</span>
-  </div>
-</div>
+  <!-- CABEÇALHO PRINCIPAL DO APP -->
+  <header class="app-header">
+    <div class="header-container">
+      
+      <!-- LOGO E TÍTULO ALINHADOS LADO A LADO -->
+      <div class="brand-zone" id="brand-home-btn" style="cursor: pointer; display: flex; align-items: center; gap: 10px;" title="Voltar ao início">
+        <img src="./logo.png" alt="Logo Meu Feed" style="height: 36px; width: auto; object-fit: contain;">
+        <div style="display: flex; flex-direction: column;">
+          <h1 style="margin: 0; line-height: 1;">Meu <span>Feed</span></h1>
+          <span id="sync-status" class="sync-status" style="margin-top: 4px;">🏠 Início / Sincronizado</span>
+        </div>
+      </div>
 
+      <!-- AÇÕES DO CABEÇALHO (OLED + BUSCA + REFRESH) -->
       <div class="header-actions">
-        <!-- Botão 5: Alternador de Modo OLED / Tema Escuro -->
+        <!-- Alternador de Modo OLED / Tema Escuro -->
         <button id="btn-toggle-oled" class="icon-btn" title="Alternar Modo OLED Black">📱 OLED</button>
         
         <div class="search-zone">
@@ -53,6 +61,7 @@
           <button id="btn-refresh" class="icon-btn" title="Atualizar notícias">🔄</button>
         </div>
       </div>
+
     </div>
   </header>
 
@@ -91,7 +100,7 @@
   <!-- BOTÃO FLUTUANTE ERGONÔMICO -->
   <button id="btn-open-menu" class="floating-menu-btn" title="Abrir menu">☰</button>
 
-  <!-- MODAL DE CONFIGURAÇÕES (INCLUI ADICIONAR FONTE RSS CUSTOMIZADA) -->
+  <!-- MODAL DE CONFIGURAÇÕES -->
   <div id="settings-modal" class="overlay-screen">
     <div class="modal-content">
       <div class="modal-header">
@@ -104,7 +113,7 @@
         <input type="text" id="settings-keywords">
       </div>
 
-      <!-- Botão 6: Campo para Adicionar Novo Feed RSS Customizado -->
+      <!-- Campo para Adicionar Novo Feed RSS Personalizado -->
       <div class="custom-keywords-box" style="border-color: var(--accent-primary);">
         <label><strong>➕ Adicionar Novo Feed RSS Personalizado:</strong></label>
         <p style="font-size: 0.78rem; color: var(--text-secondary); margin-top: 4px;">Cole o link de qualquer blog ou portal (Ex: site de cinema, lutas ou tecnologia):</p>
