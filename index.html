@@ -36,10 +36,12 @@
   </div>
 
   <!-- CABEÇALHO COM BOTÃO HOME E ALTERNADOR OLED -->
-  <div class="brand-zone" id="brand-home-btn" style="cursor: pointer;" title="Voltar ao início">
-  <img src="logo.png" alt="Logo Meu Feed" style="height: 32px; width: auto; vertical-align: middle; margin-right: 8px;">
-  <h1>Meu <span>Feed</span></h1>
-  <span id="sync-status" class="sync-status">🏠 Início / Sincronizado</span>
+  <div class="brand-zone" id="brand-home-btn" style="cursor: pointer; display: flex; align-items: center; gap: 10px;" title="Voltar ao início">
+  <img src="./logo.png" alt="Logo Meu Feed" style="height: 36px; width: auto; object-fit: contain;">
+  <div style="display: flex; flex-direction: column;">
+    <h1 style="margin: 0; line-height: 1;">Meu <span>Feed</span></h1>
+    <span id="sync-status" class="sync-status" style="margin-top: 4px;">🏠 Início / Sincronizado</span>
+  </div>
 </div>
 
       <div class="header-actions">
