@@ -2,70 +2,35 @@
    1. BASE OFICIAL DE FEEDS (G1 + GLOBO ESPORTE + CUSTOMIZADOS)
    ========================================================================== */
 const DEFAULT_CATEGORIES = {
-  politica_br: { 
-    name: 'Política Brasileira', 
-    icon: '🏛️', 
-    url: 'https://g1.globo.com/rss/g1/politica/' 
-  },
-  politica_int: { 
-    name: 'Política Internacional', 
-    icon: '🌐', 
-    url: 'https://g1.globo.com/rss/g1/mundo/' 
-  },
-  economia: { 
-    name: 'Economia & Negócios', 
-    icon: '📈', 
-    url: 'https://g1.globo.com/rss/g1/economia/' 
-  },
-  futebol_br: { 
-    name: 'Futebol Brasileiro', 
-    icon: '⚽', 
-    url: 'https://ge.globo.com/rss/ge/futebol/' 
-  },
-  inter: { 
-    name: 'Sport Club Internacional', 
-    icon: '🇦🇹', 
-    url: 'https://ge.globo.com/rss/ge/futebol/times/internacional/' 
-  },
-  lutas: { 
-    name: 'UFC & Lutas', 
-    icon: '🥊', 
-    url: 'https://ge.globo.com/rss/ge/combate/' 
-  },
-  tecnologia: { 
-    name: 'Tecnologia & Inovação', 
-    icon: '💻', 
-    url: 'https://g1.globo.com/rss/g1/tecnologia/' 
-  }
+  politica_br: { name: 'Política Brasileira', icon: '🏛️', url: 'https://g1.globo.com/rss/g1/politica/' },
+  politica_int: { name: 'Política Internacional', icon: '🌐', url: 'https://g1.globo.com/rss/g1/mundo/' },
+  economia: { name: 'Economia & Negócios', icon: '📈', url: 'https://g1.globo.com/rss/g1/economia/' },
+  futebol_br: { name: 'Futebol Brasileiro', icon: '⚽', url: 'https://ge.globo.com/rss/ge/futebol/' },
+  inter: { name: 'Sport Club Internacional', icon: '🇦🇹', url: 'https://ge.globo.com/rss/ge/futebol/times/internacional/' },
+  lutas: { name: 'UFC & Lutas', icon: '🥊', url: 'https://ge.globo.com/rss/ge/combate/' },
+  tecnologia: { name: 'Tecnologia & Inovação', icon: '💻', url: 'https://g1.globo.com/rss/g1/tecnologia/' }
 };
 
 let customCategories = JSON.parse(localStorage.getItem('meu_feed_custom_sources')) || {};
 let CATEGORIES_DATABASE = { ...DEFAULT_CATEGORIES, ...customCategories };
 
-/* Injeção e recuperação de preferências do utilizador no localStorage */
 let userCategories = JSON.parse(localStorage.getItem('meu_feed_categories')) || [];
-const defaultKeys = Object.keys(DEFAULT_CATEGORIES);
-
-defaultKeys.forEach(key => {
-  if (!userCategories.includes(key)) {
-    userCategories.push(key);
-  }
+Object.keys(DEFAULT_CATEGORIES).forEach(key => {
+  if (!userCategories.includes(key)) userCategories.push(key);
 });
 localStorage.setItem('meu_feed_categories', JSON.stringify(userCategories));
 
-let userKeywords = JSON.parse(localStorage.getItem('meu_feed_keywords')) || [
-  'Internacional', 'Inter', 'Colorado', 'UFC', 'economia', 'política'
-];
-
+let userKeywords = JSON.parse(localStorage.getItem('meu_feed_keywords')) || ['Internacional', 'Inter', 'Colorado', 'UFC', 'economia', 'política'];
 let savedArticles = JSON.parse(localStorage.getItem('meu_feed_saved')) || [];
 let readArticles = JSON.parse(localStorage.getItem('meu_feed_read')) || [];
 let hiddenKeywords = JSON.parse(localStorage.getItem('meu_feed_hidden_keywords')) || [];
+let readingHistory = JSON.parse(localStorage.getItem('meu_feed_history')) || [];
 let isOledMode = localStorage.getItem('meu_feed_oled') === 'true';
 
 let loadedSectorsData = {}; 
 let recentArticles = [];
 let currentView = 'feed';
-let activeCategoryFilter = 'all'; // 'all' ou a chave da categoria selecionada
+let activeCategoryFilter = 'all';
 
 /* ==========================================================================
    2. ELEMENTOS DA INTERFACE (DOM)
@@ -86,7 +51,6 @@ const customRssUrlInput        = document.getElementById('custom-rss-url');
 const btnAddCustomRss          = document.getElementById('btn-add-custom-rss');
 
 const btnToggleOled            = document.getElementById('btn-toggle-oled');
-
 const categoryFilterBar        = document.getElementById('category-filter-bar');
 
 const carouselTrack            = document.getElementById('carousel-track');
@@ -108,14 +72,11 @@ const readerBody               = document.getElementById('reader-body');
 const btnCloseReader           = document.getElementById('btn-close-reader');
 
 /* ==========================================================================
-   3. INICIALIZAÇÃO DO APLICATIVO
+   3. INICIALIZAÇÃO
    ========================================================================== */
 document.addEventListener('DOMContentLoaded', () => {
   setupEventListeners();
-
-  if (isOledMode) {
-    document.body.classList.add('oled-mode');
-  }
+  if (isOledMode) document.body.classList.add('oled-mode');
 
   if (!localStorage.getItem('meu_feed_installed')) {
     onboardingKeywordsInput.value = userKeywords.join(', ');
@@ -131,25 +92,27 @@ function renderCategoryGrid(container, selectedKeys) {
   Object.keys(CATEGORIES_DATABASE).forEach(catKey => {
     const cat = CATEGORIES_DATABASE[catKey];
     const isChecked = selectedKeys.includes(catKey) ? 'checked' : '';
-    
     const label = document.createElement('label');
     label.className = 'category-checkbox';
-    label.innerHTML = `
-      <input type="checkbox" value="${catKey}" ${isChecked}>
-      ${cat.icon} ${cat.name}
-    `;
+    label.innerHTML = `<input type="checkbox" value="${catKey}" ${isChecked}> ${cat.icon} ${cat.name}`;
     container.appendChild(label);
   });
 }
 
 /* ==========================================================================
-   4. PROCESSAMENTO DOS FEEDS COM FILTRO DE FRESCOR (MÁX 48h)
+   4. PROCESSAMENTO DOS FEEDS (48h)
    ========================================================================== */
 async function loadAllSectors() {
   if (currentView === 'saved') {
     document.querySelector('.carousel-section').style.display = 'none';
     if (categoryFilterBar) categoryFilterBar.style.display = 'none';
     renderSavedArticles();
+    return;
+  }
+  if (currentView === 'stats') {
+    document.querySelector('.carousel-section').style.display = 'none';
+    if (categoryFilterBar) categoryFilterBar.style.display = 'none';
+    renderStatsPanel();
     return;
   }
 
@@ -166,23 +129,19 @@ async function loadAllSectors() {
     recentArticles = [];
 
     const now = new Date();
-    const maxAgeMs = 48 * 60 * 60 * 1000; // Limite de 48 horas
+    const maxAgeMs = 48 * 60 * 60 * 1000;
 
     Object.keys(json.data).forEach(catKey => {
       const items = json.data[catKey] || [];
       const filtered = items.filter(art => {
         const articleId = btoa(unescape(encodeURIComponent(art.link)));
-        
-        // Descarta se já foi lido ou se contém termos bloqueados ("Não sugerir")
         if (readArticles.includes(articleId)) return false;
         
         const fullText = (art.title + ' ' + (art.description || '')).toLowerCase();
-        const isBlocked = hiddenKeywords.some(kw => fullText.includes(kw.toLowerCase()));
-        if (isBlocked) return false;
+        if (hiddenKeywords.some(kw => fullText.includes(kw.toLowerCase()))) return false;
 
         if (!art.pubDate) return true;
-        const artDate = new Date(art.pubDate);
-        return (now - artDate) <= maxAgeMs;
+        return (now - new Date(art.pubDate)) <= maxAgeMs;
       }).map(art => ({
         ...art,
         id: btoa(unescape(encodeURIComponent(art.link))),
@@ -190,11 +149,8 @@ async function loadAllSectors() {
       }));
 
       loadedSectorsData[catKey] = filtered;
-
       filtered.forEach(art => {
-        if (!recentArticles.some(a => a.id === art.id)) {
-          recentArticles.push(art);
-        }
+        if (!recentArticles.some(a => a.id === art.id)) recentArticles.push(art);
       });
     });
 
@@ -206,18 +162,17 @@ async function loadAllSectors() {
 
   } catch (err) {
     console.error('Erro ao carregar feed.json:', err);
-    sectorsContainer.innerHTML = '<p style="color:var(--text-secondary); grid-column: 1/-1; text-align:center; padding:40px;">Nenhuma notícia encontrada ou aguardando primeira execução do robô.</p>';
+    sectorsContainer.innerHTML = '<p style="color:var(--text-secondary); grid-column: 1/-1; text-align:center; padding:40px;">Nenhuma notícia encontrada.</p>';
   }
 }
 
 /* ==========================================================================
-   5. BARRA DE FILTROS POR CATEGORIAS (PÍLULAS NO TOPO)
+   5. BARRA DE FILTROS (PÍLULAS)
    ========================================================================== */
 function renderCategoryFilterBar() {
   if (!categoryFilterBar) return;
   categoryFilterBar.innerHTML = '';
 
-  // Botão "Todas"
   const allBtn = document.createElement('button');
   allBtn.className = `category-pill ${activeCategoryFilter === 'all' ? 'active' : ''}`;
   allBtn.innerHTML = `🔥 Todas`;
@@ -228,7 +183,6 @@ function renderCategoryFilterBar() {
   });
   categoryFilterBar.appendChild(allBtn);
 
-  // Botões para cada categoria ativa do utilizador
   userCategories.forEach(catKey => {
     const catInfo = CATEGORIES_DATABASE[catKey];
     if (!catInfo) return;
@@ -285,8 +239,6 @@ function renderCarousel() {
 
 async function renderDashboard(searchTerm = '') {
   sectorsContainer.innerHTML = '';
-
-  // Se o utilizador selecionou uma categoria específica no filtro, esconde o carrossel e exibe apenas essa editoria
   const filterByCat = activeCategoryFilter !== 'all' ? activeCategoryFilter : null;
 
   if (filterByCat) {
@@ -294,7 +246,6 @@ async function renderDashboard(searchTerm = '') {
   } else {
     document.querySelector('.carousel-section').style.display = 'block';
 
-    // Bloco Destaques & Favoritos (apenas na visão geral "Todas")
     if (!searchTerm) {
       const vipByKeyword = {};
       userKeywords.forEach(kw => { vipByKeyword[kw.toLowerCase()] = []; });
@@ -312,16 +263,13 @@ async function renderDashboard(searchTerm = '') {
       });
 
       const interleavedVip = [];
-      let added = true;
-      let round = 0;
+      let added = true, round = 0;
       while (added && round < 10) {
         added = false;
         Object.keys(vipByKeyword).forEach(kLower => {
-          if (vipByKeyword[kLower][round]) {
-            if (!interleavedVip.some(a => a.id === vipByKeyword[kLower][round].id)) {
-              interleavedVip.push(vipByKeyword[kLower][round]);
-              added = true;
-            }
+          if (vipByKeyword[kLower][round] && !interleavedVip.some(a => a.id === vipByKeyword[kLower][round].id)) {
+            interleavedVip.push(vipByKeyword[kLower][round]);
+            added = true;
           }
         });
         round++;
@@ -344,18 +292,15 @@ async function renderDashboard(searchTerm = '') {
     }
   }
 
-  // Blocos das Categorias Ativas
   let renderedAny = false;
   userCategories.forEach(catKey => {
-    if (filterByCat && filterByCat !== catKey) return; // Se houver filtro ativo, pula as outras
+    if (filterByCat && filterByCat !== catKey) return;
 
     const catInfo = CATEGORIES_DATABASE[catKey];
     if (!catInfo) return;
 
     let articles = (loadedSectorsData[catKey] || []).filter(art => !readArticles.includes(art.id));
-    if (searchTerm) {
-      articles = articles.filter(a => a.title.toLowerCase().includes(searchTerm.toLowerCase()));
-    }
+    if (searchTerm) articles = articles.filter(a => a.title.toLowerCase().includes(searchTerm.toLowerCase()));
 
     if (articles.length > 0) {
       renderedAny = true;
@@ -370,9 +315,7 @@ async function renderDashboard(searchTerm = '') {
       `;
 
       const container = sector.querySelector(`#cards-${catKey}`);
-      // Se estiver numa categoria específica, mostra mais notícias (ex: 20), senão limita a 6
-      const limit = filterByCat ? 50 : 6;
-      articles.slice(0, limit).forEach(art => container.appendChild(createNewsCard(art, false)));
+      articles.slice(0, filterByCat ? 50 : 6).forEach(art => container.appendChild(createNewsCard(art, false)));
       sectorsContainer.appendChild(sector);
     }
   });
@@ -400,8 +343,8 @@ function createNewsCard(article, isVip) {
       <div class="card-actions">
         <button class="action-btn btn-read">📖 Leitura</button>
         <button class="action-btn btn-save">${isSaved ? '🔖 Salvo' : '📌 Salvar'}</button>
-        <button class="action-btn btn-like" title="Mais disso (Favoritar tema)">👍🏻</button>
-        <button class="action-btn btn-dislike" title="Não sugerir (Ocultar tema)">👎🏻</button>
+        <button class="action-btn btn-like" title="Mais disso">👍🏻</button>
+        <button class="action-btn btn-dislike" title="Não sugerir">👎🏻</button>
         <button class="action-btn btn-hide" title="Ocultar notícia lida">👁️ Lido</button>
         <button class="action-btn btn-share" title="Partilhar no WhatsApp">📲</button>
       </div>
@@ -410,17 +353,8 @@ function createNewsCard(article, isVip) {
 
   card.querySelector('.btn-read').addEventListener('click', () => openReaderMode(article));
   card.querySelector('.btn-save').addEventListener('click', (e) => toggleSave(article, e.target));
-  
-  // Ação 👍🏻: Adiciona termos do título aos favoritos para priorizar
-  card.querySelector('.btn-like').addEventListener('click', () => {
-    feedbackLike(article);
-  });
-
-  // Ação 👎🏻: Oculta notícias semelhantes e bloqueia o termo
-  card.querySelector('.btn-dislike').addEventListener('click', () => {
-    feedbackDislike(article);
-  });
-
+  card.querySelector('.btn-like').addEventListener('click', () => feedbackLike(article));
+  card.querySelector('.btn-dislike').addEventListener('click', () => feedbackDislike(article));
   card.querySelector('.btn-hide').addEventListener('click', () => markAsRead(article.id));
   card.querySelector('.btn-share').addEventListener('click', () => shareToWhatsApp(article));
 
@@ -428,71 +362,103 @@ function createNewsCard(article, isVip) {
 }
 
 /* ==========================================================================
-   7. SISTEMA DE FEEDBACK (👍🏻 Manda mais / 👎🏻 Não sugerir)
-   ========================================================================== */
+   7. FEEDBACK E HÁBITOS (PAINEL DE ESTATÍSTICAS)
+   ========================================================================= */
 function feedbackLike(article) {
-  // Extrai palavras significativas do título para somar aos favoritos
   const words = article.title.split(' ').filter(w => w.length > 4);
-  if (words.length > 0) {
-    const suggestedWord = words[0];
-    if (!userKeywords.includes(suggestedWord)) {
-      userKeywords.push(suggestedWord);
-      localStorage.setItem('meu_feed_keywords', JSON.stringify(userKeywords));
-    }
+  if (words.length > 0 && !userKeywords.includes(words[0])) {
+    userKeywords.push(words[0]);
+    localStorage.setItem('meu_feed_keywords', JSON.stringify(userKeywords));
   }
-  alert('👍🏻 Feedback registado! Vamos priorizar mais conteúdos como este.');
+  alert('👍🏻 Feedback registado!');
   loadAllSectors();
 }
 
 function feedbackDislike(article) {
-  // Pega as primeiras palavras ou o título curto para ocultar futuras ocorrências
   const snippet = article.title.split(' ').slice(0, 3).join(' ');
   if (!hiddenKeywords.includes(snippet)) {
     hiddenKeywords.push(snippet);
     localStorage.setItem('meu_feed_hidden_keywords', JSON.stringify(hiddenKeywords));
   }
   markAsRead(article.id);
-  alert('👎🏻 Entendido. Conteúdos semelhantes serão ocultados.');
+  alert('👎🏻 Conteúdo semelhante ocultado.');
 }
 
-/* MARCAR COMO LIDO E OCULTAR CARD INSTANTANEAMENTE */
 function markAsRead(articleId) {
   if (!readArticles.includes(articleId)) {
     readArticles.push(articleId);
     localStorage.setItem('meu_feed_read', JSON.stringify(readArticles));
   }
-
   const cards = document.querySelectorAll(`[data-article-id="${articleId}"]`);
   cards.forEach(card => {
     card.style.transition = 'all 0.3s ease';
     card.style.opacity = '0';
-    card.style.transform = 'scale(0.95)';
     setTimeout(() => card.remove(), 300);
   });
 }
 
+function recordReadingHabit(article) {
+  readingHistory.unshift({
+    title: article.title,
+    date: new Date().toISOString(),
+    readTime: article.readTime
+  });
+  if (readingHistory.length > 50) readingHistory.pop();
+  localStorage.setItem('meu_feed_history', JSON.stringify(readingHistory));
+}
+
+function renderStatsPanel() {
+  sectorsContainer.innerHTML = '';
+  const sector = document.createElement('section');
+  sector.className = 'sector-block';
+  sector.style.gridColumn = '1 / -1';
+  
+  sector.innerHTML = `
+    <div class="sector-header">
+      <h3 class="sector-title">📊 Painel de Hábitos e Estatísticas</h3>
+      <span class="sector-badge">Seu consumo</span>
+    </div>
+    <div style="padding: 20px; color: var(--text-primary);">
+      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; margin-bottom: 24px;">
+        <div style="background: var(--card-bg); border: 1px solid var(--card-border); padding: 20px; border-radius: 12px; text-align: center;">
+          <h4 style="color: var(--text-secondary); font-size: 0.9rem; margin-bottom: 8px;">Artigos Lidos</h4>
+          <span style="font-size: 2rem; font-weight: 700; color: var(--accent-primary);">${readArticles.length}</span>
+        </div>
+        <div style="background: var(--card-bg); border: 1px solid var(--card-border); padding: 20px; border-radius: 12px; text-align: center;">
+          <h4 style="color: var(--text-secondary); font-size: 0.9rem; margin-bottom: 8px;">Itens Salvos</h4>
+          <span style="font-size: 2rem; font-weight: 700; color: var(--accent-primary);">${savedArticles.length}</span>
+        </div>
+      </div>
+      <h4 style="margin-bottom: 12px; font-size: 1.1rem;">📝 Histórico Recente de Leitura</h4>
+      <div style="background: var(--card-bg); border: 1px solid var(--card-border); border-radius: 12px; padding: 15px;">
+        ${readingHistory.length === 0 ? '<p style="color: var(--text-secondary); text-align: center; padding: 10px;">Ainda não abriu nenhuma matéria no modo de leitura limpa.</p>' : 
+          readingHistory.map(h => `<div style="padding: 10px 0; border-bottom: 1px solid var(--card-border); font-size: 0.9rem;"><strong>${h.title}</strong><br><span style="color: var(--text-secondary); font-size: 0.75rem;">⏱️ ${h.readTime} min • ${formatDate(h.date)}</span></div>`).join('')}
+      </div>
+    </div>
+  `;
+  sectorsContainer.appendChild(sector);
+}
+
 function shareToWhatsApp(article) {
   const text = `📰 *${article.title}*\n⏱️ Leitura de ${article.readTime} min\n\n🔗 ${article.link}`;
-  const whatsappUrl = `https://api.whatsapp.com/send?text=${encodeURIComponent(text)}`;
-  window.open(whatsappUrl, '_blank');
+  window.open(`https://api.whatsapp.com/send?text=${encodeURIComponent(text)}`, '_blank');
 }
 
 /* ==========================================================================
-   8. MODO DE LEITURA LIMPA (PARÁGRAFOS CORRIGIDOS)
+   8. LEITURA LIMPA (READER VIEW)
    ========================================================================== */
 function openReaderMode(article) {
+  recordReadingHabit(article);
+
   const cleanDesc = (article.description || '').replace(/<[^>]*>?/gm, '');
   const sentences = cleanDesc.split('. ').filter(s => s.trim().length > 10);
   const summaryPoints = sentences.slice(0, 2).map(s => `• ${s.trim()}${s.endsWith('.') ? '' : '.'}`).join('<br>');
 
-  // Formatação limpa do corpo do texto em parágrafos separados (<p>)
   let rawContent = article.content || article.description || '';
-  // Se o feed vier como texto corrido sem tags de parágrafo, divide por quebras ou pontos
   if (!rawContent.includes('<p>') && !rawContent.includes('<br>')) {
     const paragraphs = rawContent.split('. ').filter(p => p.trim().length > 0);
     rawContent = paragraphs.map(p => `<p style="margin-bottom: 16px; line-height: 1.7; color: var(--text-primary);">${p.trim()}${p.endsWith('.') ? '' : '.'}</p>`).join('');
   } else {
-    // Garante estilo legível para as tags HTML existentes
     rawContent = rawContent.replace(/<p>/g, '<p style="margin-bottom: 16px; line-height: 1.7; color: var(--text-primary);">');
   }
 
@@ -556,10 +522,9 @@ function renderSavedArticles() {
     </div>
     <div class="sector-cards" id="saved-cards-container"></div>
   `;
-
   const container = sector.querySelector('#saved-cards-container');
   if (savedArticles.length === 0) {
-    container.innerHTML = '<p style="color:var(--text-secondary); padding:20px;">Nenhum artigo salvo na sua lista.</p>';
+    container.innerHTML = '<p style="color:var(--text-secondary); padding:20px;">Nenhum artigo salvo.</p>';
   } else {
     savedArticles.forEach(art => container.appendChild(createNewsCard(art, false)));
   }
@@ -574,8 +539,7 @@ function calculateReadTime(text) {
 
 function formatDate(dateString) {
   if (!dateString) return 'Recente';
-  const dateObj = new Date(dateString);
-  return dateObj.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' });
+  return new Date(dateString).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' });
 }
 
 function parseKeywords(stringInput) {
@@ -583,84 +547,8 @@ function parseKeywords(stringInput) {
 }
 
 /* ==========================================================================
-   9. CONFIGURAÇÕES E EVENTOS DA INTERFACE
+   9. EVENTOS DA INTERFACE
    ========================================================================== */
-function renderReorderSettings() {
-  if (!settingsReorderList) return;
-  settingsReorderList.innerHTML = '';
-
-  userCategories.forEach((catKey) => {
-    const cat = CATEGORIES_DATABASE[catKey];
-    if (!cat) return;
-
-    const row = document.createElement('div');
-    row.className = 'reorder-row';
-    row.innerHTML = `
-      <span style="font-weight:600;">${cat.icon} ${cat.name}</span>
-      <div class="reorder-actions">
-        <button class="reorder-btn btn-up" title="Subir">⬆️</button>
-        <button class="reorder-btn btn-down" title="Descer">⬇️</button>
-        <button class="reorder-btn btn-delete" title="Excluir Categoria" style="border-color:var(--accent-red); color:var(--accent-red);">🗑️</button>
-      </div>
-    `;
-
-    row.querySelector('.btn-up').addEventListener('click', () => moveCategory(catKey, -1));
-    row.querySelector('.btn-down').addEventListener('click', () => moveCategory(catKey, 1));
-    row.querySelector('.btn-delete').addEventListener('click', () => removeCategory(catKey));
-
-    settingsReorderList.appendChild(row);
-  });
-}
-
-function moveCategory(catKey, direction) {
-  const index = userCategories.indexOf(catKey);
-  if (index === -1) return;
-
-  const newIndex = index + direction;
-  if (newIndex >= 0 && newIndex < userCategories.length) {
-    const temp = userCategories[index];
-    userCategories[index] = userCategories[newIndex];
-    userCategories[newIndex] = temp;
-    renderReorderSettings();
-  }
-}
-
-function removeCategory(catKey) {
-  if (userCategories.length <= 1) {
-    alert('Você precisa manter pelo menos uma categoria no seu feed.');
-    return;
-  }
-
-  userCategories = userCategories.filter(key => key !== catKey);
-  renderReorderSettings();
-}
-
-function handleAddCustomRss() {
-  const name = customRssNameInput.value.trim();
-  const url = customRssUrlInput.value.trim();
-
-  if (!name || !url) {
-    alert('Por favor, preencha o Nome e a URL do RSS.');
-    return;
-  }
-
-  const customKey = `custom_${Date.now()}`;
-  const newCat = { name: name, icon: '🌐', url: url };
-
-  customCategories[customKey] = newCat;
-  CATEGORIES_DATABASE[customKey] = newCat;
-  localStorage.setItem('meu_feed_custom_sources', JSON.stringify(customCategories));
-
-  userCategories.push(customKey);
-  localStorage.setItem('meu_feed_categories', JSON.stringify(userCategories));
-
-  customRssNameInput.value = '';
-  customRssUrlInput.value = '';
-
-  renderReorderSettings();
-  alert(`Fonte "${name}" adicionada com sucesso!`);
-}
-
 function setupEventListeners() {
   if (btnToggleOled) {
     btnToggleOled.addEventListener('click', () => {
@@ -670,7 +558,22 @@ function setupEventListeners() {
     });
   }
 
-  if (btnAddCustomRss) btnAddCustomRss.addEventListener('click', handleAddCustomRss);
+  if (btnAddCustomRss) btnAddCustomRss.addEventListener('click', () => {
+    const name = customRssNameInput.value.trim();
+    const url = customRssUrlInput.value.trim();
+    if (!name || !url) return alert('Preencha Nome e URL.');
+    const customKey = `custom_${Date.now()}`;
+    const newCat = { name: name, icon: '🌐', url: url };
+    customCategories[customKey] = newCat;
+    CATEGORIES_DATABASE[customKey] = newCat;
+    localStorage.setItem('meu_feed_custom_sources', JSON.stringify(customCategories));
+    userCategories.push(customKey);
+    localStorage.setItem('meu_feed_categories', JSON.stringify(userCategories));
+    customRssNameInput.value = '';
+    customRssUrlInput.value = '';
+    renderReorderSettings();
+    alert(`Fonte "${name}" adicionada!`);
+  });
 
   if (brandHomeBtn) {
     brandHomeBtn.addEventListener('click', () => {
@@ -683,18 +586,13 @@ function setupEventListeners() {
 
   if (btnFinishOnboarding) {
     btnFinishOnboarding.addEventListener('click', () => {
-      const checkboxes = onboardingCategories.querySelectorAll('input[type="checkbox"]:checked');
-      const selectedCats = Array.from(checkboxes).map(cb => cb.value);
-
+      const selectedCats = Array.from(onboardingCategories.querySelectorAll('input[type="checkbox"]:checked')).map(cb => cb.value);
       if (selectedCats.length === 0) return alert('Selecione pelo menos uma categoria.');
-      
       userCategories = selectedCats;
       userKeywords = parseKeywords(onboardingKeywordsInput.value);
-
       localStorage.setItem('meu_feed_categories', JSON.stringify(userCategories));
       localStorage.setItem('meu_feed_keywords', JSON.stringify(userKeywords));
       localStorage.setItem('meu_feed_installed', 'true');
-
       onboardingScreen.classList.remove('active');
       loadAllSectors();
     });
@@ -731,7 +629,6 @@ function setupEventListeners() {
       document.querySelectorAll('.nav-item').forEach(i => i.classList.remove('active'));
       const target = e.currentTarget;
       target.classList.add('active');
-      
       const view = target.getAttribute('data-view');
       closeMenu();
 
@@ -750,10 +647,8 @@ function setupEventListeners() {
   if (btnSaveSettings) {
     btnSaveSettings.addEventListener('click', () => {
       userKeywords = parseKeywords(settingsKeywordsInput.value);
-
       localStorage.setItem('meu_feed_categories', JSON.stringify(userCategories));
       localStorage.setItem('meu_feed_keywords', JSON.stringify(userKeywords));
-
       settingsModal.classList.remove('active');
       currentView = 'feed';
       loadAllSectors();
@@ -765,9 +660,46 @@ function setupEventListeners() {
 
   document.querySelectorAll('.overlay-screen').forEach(overlay => {
     overlay.addEventListener('click', (e) => {
-      if (e.target === overlay) {
-        overlay.classList.remove('active');
+      if (e.target === overlay) overlay.classList.remove('active');
+    });
+  });
+}
+
+function renderReorderSettings() {
+  if (!settingsReorderList) return;
+  settingsReorderList.innerHTML = '';
+  userCategories.forEach(catKey => {
+    const cat = CATEGORIES_DATABASE[catKey];
+    if (!cat) return;
+    const row = document.createElement('div');
+    row.className = 'reorder-row';
+    row.innerHTML = `
+      <span style="font-weight:600;">${cat.icon} ${cat.name}</span>
+      <div class="reorder-actions">
+        <button class="reorder-btn btn-up" title="Subir">⬆️</button>
+        <button class="reorder-btn btn-down" title="Descer">⬇️</button>
+        <button class="reorder-btn btn-delete" title="Excluir" style="border-color:var(--accent-red); color:var(--accent-red);">🗑️</button>
+      </div>
+    `;
+    row.querySelector('.btn-up').addEventListener('click', () => {
+      const idx = userCategories.indexOf(catKey);
+      if (idx > 0) {
+        [userCategories[idx], userCategories[idx-1]] = [userCategories[idx-1], userCategories[idx]];
+        renderReorderSettings();
       }
     });
+    row.querySelector('.btn-down').addEventListener('click', () => {
+      const idx = userCategories.indexOf(catKey);
+      if (idx < userCategories.length - 1) {
+        [userCategories[idx], userCategories[idx+1]] = [userCategories[idx+1], userCategories[idx]];
+        renderReorderSettings();
+      }
+    });
+    row.querySelector('.btn-delete').addEventListener('click', () => {
+      if (userCategories.length <= 1) return alert('Mantenha pelo menos uma categoria.');
+      userCategories = userCategories.filter(k => k !== catKey);
+      renderReorderSettings();
+    });
+    settingsReorderList.appendChild(row);
   });
 }

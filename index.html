@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Meu Feed — Central de Notícias</title>
   
-  <!-- FAVICON E ÍCONE PARA NAVEGADORES E IOS (Sem duplicações) -->
+  <!-- FAVICON E ÍCONE PARA NAVEGADORES E IOS -->
   <link rel="icon" type="image/png" href="./logo.png">
   <link rel="apple-touch-icon" href="./logo.png">
   
@@ -43,20 +43,15 @@
   <header class="app-header">
     <div class="header-container">
       
-      <!-- LOGO E TÍTULO ALINHADOS LADO A LADO -->
+      <!-- LOGO E TÍTULO (Mensagem de sincronização removida) -->
       <div class="brand-zone" id="brand-home-btn" style="cursor: pointer; display: flex; align-items: center; gap: 10px;" title="Voltar ao início">
         <img src="./logo.png" alt="Logo Meu Feed" style="height: 36px; width: auto; object-fit: contain;">
-        <div style="display: flex; flex-direction: column;">
-          <h1 style="margin: 0; line-height: 1;">Meu <span>Feed</span></h1>
-          <span id="sync-status" class="sync-status" style="margin-top: 4px;">🏠 Início / Sincronizado</span>
-        </div>
+        <h1 style="margin: 0; line-height: 1;">Meu <span>Feed</span></h1>
       </div>
 
-      <!-- AÇÕES DO CABEÇALHO (OLED + BUSCA + REFRESH) -->
+      <!-- AÇÕES DO CABEÇALHO -->
       <div class="header-actions">
-        <!-- Alternador de Modo OLED / Tema Escuro -->
         <button id="btn-toggle-oled" class="icon-btn" title="Alternar Modo OLED Black">📱 OLED</button>
-        
         <div class="search-zone">
           <input type="text" id="search-input" placeholder="Filtrar matérias por texto..." aria-label="Buscar notícias">
           <button id="btn-refresh" class="icon-btn" title="Atualizar notícias">🔄</button>
@@ -66,10 +61,8 @@
     </div>
   </header>
 
-  <!-- BARRA DE FILTROS POR CATEGORIAS (Pílulas para navegação rápida) -->
-  <nav id="category-filter-bar" class="category-filter-bar" aria-label="Filtro de Categorias">
-    <!-- As pílulas de categorias serão injetadas dinamicamente aqui via script.js -->
-  </nav>
+  <!-- BARRA DE FILTROS POR CATEGORIAS (Pílulas integradas ao design) -->
+  <nav id="category-filter-bar" class="category-filter-bar" aria-label="Filtro de Categorias"></nav>
 
   <!-- CARROSSEL DE NOTÍCIAS -->
   <section class="carousel-section">
@@ -99,6 +92,7 @@
     <nav class="sidebar-nav">
       <button class="nav-item active" data-view="feed"><span class="nav-icon">📰</span> Central de Notícias</button>
       <button class="nav-item" data-view="saved"><span class="nav-icon">🔖</span> Salvos para Leitura</button>
+      <button class="nav-item" data-view="stats"><span class="nav-icon">📊</span> Painel de Hábitos</button>
       <button class="nav-item" data-view="settings"><span class="nav-icon">⚙️</span> Configurações e Fontes</button>
     </nav>
   </aside>
@@ -119,10 +113,9 @@
         <input type="text" id="settings-keywords">
       </div>
 
-      <!-- Campo para Adicionar Novo Feed RSS Personalizado -->
       <div class="custom-keywords-box" style="border-color: var(--accent-primary);">
         <label><strong>➕ Adicionar Novo Feed RSS Personalizado:</strong></label>
-        <p style="font-size: 0.78rem; color: var(--text-secondary); margin-top: 4px;">Cole o link de qualquer blog ou portal (Ex: site de cinema, lutas ou tecnologia):</p>
+        <p style="font-size: 0.78rem; color: var(--text-secondary); margin-top: 4px;">Cole o link de qualquer blog ou portal:</p>
         <div style="display: flex; gap: 8px; margin-top: 10px;">
           <input type="text" id="custom-rss-name" placeholder="Nome (Ex: Cinema Noir)" style="flex: 1; margin:0;">
           <input type="text" id="custom-rss-url" placeholder="URL do RSS (https://...)" style="flex: 2; margin:0;">
