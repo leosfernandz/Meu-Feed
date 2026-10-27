@@ -5,14 +5,11 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Meu Feed — Central de Notícias</title>
   
-  <!-- FAVICON (Ícone da aba do navegador) -->
+  <!-- FAVICON E ÍCONE PARA NAVEGADORES E IOS (Sem duplicações) -->
   <link rel="icon" type="image/png" href="./logo.png">
-
-  <!-- FAVICON E ÍCONE PARA IOS/IPHONE -->
- <link rel="icon" type="image/png" href="./logo.png">
- <link rel="apple-touch-icon" href="./logo.png">
+  <link rel="apple-touch-icon" href="./logo.png">
   
-  <!-- ESTILOS E FONTE -->
+  <!-- ESTILOS E FONTES -->
   <link rel="stylesheet" href="./style.css">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -68,6 +65,11 @@
 
     </div>
   </header>
+
+  <!-- BARRA DE FILTROS POR CATEGORIAS (Pílulas para navegação rápida) -->
+  <nav id="category-filter-bar" class="category-filter-bar" aria-label="Filtro de Categorias">
+    <!-- As pílulas de categorias serão injetadas dinamicamente aqui via script.js -->
+  </nav>
 
   <!-- CARROSSEL DE NOTÍCIAS -->
   <section class="carousel-section">
@@ -137,7 +139,7 @@
     </div>
   </div>
 
-  <!-- LEITURA LIMPA -->
+  <!-- LEITURA LIMPA (READER VIEW) -->
   <div id="reader-modal" class="overlay-screen">
     <div class="reader-content">
       <button id="btn-close-reader" class="close-btn">&times;</button>
