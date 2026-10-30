@@ -1,145 +1,708 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Meu Feed — Central de Notícias</title>
-  
-  <!-- FAVICON E ÍCONE PARA NAVEGADORES E IOS -->
-  <link rel="icon" type="image/png" href="./logo.png">
-  <link rel="apple-touch-icon" href="./logo.png">
-  
-  <!-- ESTILOS E FONTES -->
-  <link rel="stylesheet" href="./style.css">
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:ital,wght@0,400;0,500;0,600;0,700;0,800;1,400&display=swap" rel="stylesheet">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Folga Perfeita — Planejador Inteligente de Férias</title>
+    
+    <!-- Google Analytics 4 (GA4) - Substitua 'G-MEUGA4IDHER' pelo seu ID de medição -->
+    <!-- Google tag (gtag.js) -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-11422963VV"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+
+  gtag('config', 'G-11422963VV');
+</script>
+
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['"Plus Jakarta Sans"', 'sans-serif'],
+                    },
+                    colors: {
+                        navy: {
+                            800: '#1e293b',
+                            900: '#0f172a',
+                            950: '#0a0f1d',
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        .glass-card {
+            backdrop-filter: blur(12px);
+        }
+        .gradient-hero {
+            background: linear-gradient(135deg, #0f172a 0%, #1e293b 50%, #064e3b 100%);
+        }
+        /* Ajuste de scroll invisível e fluidez para celular */
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+        .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+
+        @media print {
+            body { background: #ffffff !important; color: #000000 !important; font-size: 12pt; }
+            header, footer, .no-print, button, form, .modal-backdrop { display: none !important; }
+            .print-only-header { display: block !important; text-align: center; border-bottom: 2px solid #0f172a; padding-bottom: 12px; margin-bottom: 24px; }
+            .glass-card { box-shadow: none !important; border: 1px solid #cbd5e1 !important; background: #ffffff !important; page-break-inside: avoid; margin-bottom: 20px; }
+            .bg-navy-900, .bg-slate-900 { background-color: #f8fafc !important; color: #0f172a !important; border: 1px solid #e2e8f0 !important; }
+            .text-white { color: #0f172a !important; }
+            .text-emerald-400 { color: #059669 !important; }
+        }
+        .print-only-header { display: none; }
+    </style>
 </head>
-<body>
+<body class="bg-slate-100 text-slate-800 font-sans antialiased min-h-screen flex flex-col justify-between overflow-x-hidden">
 
-  <!-- ONBOARDING (PRIMEIRO ACESSO) -->
-  <div id="onboarding-screen" class="overlay-screen">
-    <div class="modal-content onboarding-modal">
-      <header class="modal-header-simple">
-        <h2>Bem-vindo ao Meu Feed 📰</h2>
-        <p>Escolha as editorias e termos prioritários para o seu dia a dia.</p>
-      </header>
-
-      <div class="custom-keywords-box">
-        <label for="onboarding-keywords"><strong>Tópicos e Times Favoritos:</strong></label>
-        <input type="text" id="onboarding-keywords" value="Internacional, Inter, Colorado, UFC, economia, política">
-      </div>
-
-      <div class="category-selection-container">
-        <label><strong>Selecione as Editorias do seu Feed:</strong></label>
-        <div class="category-selection-grid" id="onboarding-categories"></div>
-      </div>
-
-      <button id="btn-finish-onboarding" class="primary-btn">Salvar e Acessar o Feed</button>
+    <div class="print-only-header">
+        <h1 style="font-size: 18pt; font-weight: 900; margin: 0;">RELATÓRIO DE SIMULAÇÃO DE FÉRIAS — FOLGA PERFEITA</h1>
+        <p style="font-size: 9pt; color: #475569; margin-top: 4px;">Simulador Informativo e Indicativo — Sem valor legal ou de vinculação com o RH</p>
     </div>
-  </div>
 
-  <!-- CABEÇALHO PRINCIPAL DO APP -->
-  <header class="app-header">
-    <div class="header-container">
-      
-      <!-- LOGO E TÍTULO (Mensagem de sincronização removida) -->
-      <div class="brand-zone" id="brand-home-btn" style="cursor: pointer; display: flex; align-items: center; gap: 10px;" title="Voltar ao início">
-        <img src="./logo.png" alt="Logo Meu Feed" style="height: 36px; width: auto; object-fit: contain;">
-        <h1 style="margin: 0; line-height: 1;">Meu <span>Feed</span></h1>
-      </div>
+    <div>
+        <header class="gradient-hero text-white shadow-xl border-b border-slate-800/80 sticky top-0 z-50 no-print">
+            <div class="max-w-5xl mx-auto px-4 md:px-6 py-3.5 flex justify-between items-center">
+                <button onclick="resetarSimuladorDoZero()" class="flex items-center space-x-2.5 text-left group focus:outline-none" title="Voltar ao início e atualizar do zero">
+                    <div class="w-9 h-9 md:w-10 md:h-10 rounded-2xl bg-emerald-500/20 border border-emerald-400/30 flex items-center justify-center text-xl md:text-2xl shadow-inner group-hover:scale-105 transition">
+                        🏝️
+                    </div>
+                    <div>
+                        <span class="font-extrabold text-lg md:text-xl tracking-tight bg-gradient-to-r from-white via-slate-100 to-emerald-400 bg-clip-text text-transparent group-hover:opacity-90 transition">Folga Perfeita</span>
+                        <span class="block text-[10px] md:text-[11px] text-emerald-400/90 font-medium tracking-wide">Planejador inteligente de férias</span>
+                    </div>
+                </button>
+                <div class="flex items-center">
+                    <span class="text-[10px] md:text-xs bg-slate-800/80 text-slate-300 border border-slate-700/60 px-2.5 md:px-3.5 py-1 md:py-1.5 rounded-full font-bold shadow-sm">
+                        ⚖️ Simulador
+                    </span>
+                </div>
+            </div>
+        </header>
 
-      <!-- AÇÕES DO CABEÇALHO -->
-      <div class="header-actions">
-        <button id="btn-toggle-oled" class="icon-btn" title="Alternar Modo OLED Black">📱 OLED</button>
-        <div class="search-zone">
-          <input type="text" id="search-input" placeholder="Filtrar matérias por texto..." aria-label="Buscar notícias">
-          <button id="btn-refresh" class="icon-btn" title="Atualizar notícias">🔄</button>
+        <main class="max-w-5xl mx-auto px-3.5 md:px-6 py-6 md:py-10 space-y-6 md:space-y-10">
+
+            <section class="text-center space-y-3 md:space-y-4 max-w-3xl mx-auto no-print">
+                <div class="inline-flex items-center gap-2 px-3.5 py-1 rounded-full bg-emerald-100/80 border border-emerald-200 text-emerald-800 text-[11px] md:text-xs font-bold shadow-sm">
+                    <span>✨ Ferramenta de Simulação Estratégica (CLT)</span>
+                </div>
+                <h1 class="text-2xl sm:text-3xl md:text-5xl font-black tracking-tight text-navy-900 leading-tight">
+                    Transforme poucos dias de férias em <span class="bg-gradient-to-r from-emerald-600 to-teal-500 bg-clip-text text-transparent">super folgas contínuas</span>
+                </h1>
+                <p class="text-slate-600 text-sm md:text-lg font-medium leading-relaxed max-w-2xl mx-auto">
+                    Encontre as melhores datas para emendar feriados e fins de semana gastando poucos dias de férias, respeitando as regras da CLT.
+                </p>
+            </section>
+
+            <section class="glass-card shadow-xl md:shadow-2xl rounded-2xl md:rounded-3xl p-4 sm:p-6 md:p-8 border border-white/80 space-y-6 md:space-y-8 relative overflow-hidden no-print bg-white/96">
+                <div class="absolute -top-24 -right-24 w-60 h-60 bg-emerald-400/10 rounded-full blur-3xl pointer-events-none"></div>
+
+                <div class="flex flex-col sm:flex-row sm:items-center justify-between border-b border-slate-200/80 pb-3.5 gap-2">
+                    <h2 class="text-base md:text-lg font-extrabold flex items-center gap-2 text-navy-900">
+                        <span class="p-1.5 rounded-xl bg-slate-100 text-sm md:text-base">⚙️</span> Parâmetros da Simulação
+                    </h2>
+                    <span class="text-[10px] md:text-xs font-semibold text-emerald-700 bg-emerald-50 px-2.5 py-1 rounded-full border border-emerald-200 self-start sm:self-auto">🔒 Processado localmente</span>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
+                    <div class="space-y-1.5">
+                        <label class="block text-[11px] md:text-xs font-extrabold uppercase tracking-wider text-slate-600">Estado (UF)</label>
+                        <select id="stateSelect" onchange="updateCityDropdown()" class="w-full p-3 bg-slate-50 border border-slate-300 rounded-xl md:rounded-2xl focus:ring-2 focus:ring-emerald-500 focus:outline-none font-bold text-slate-800 text-sm shadow-sm transition">
+                            <option value="SC" selected>Santa Catarina (SC)</option>
+                            <option value="SP">São Paulo (SP)</option>
+                            <option value="RJ">Rio de Janeiro (RJ)</option>
+                            <option value="RS">Rio Grande do Sul (RS)</option>
+                            <option value="PR">Paraná (PR)</option>
+                        </select>
+                    </div>
+
+                    <div class="space-y-1.5">
+                        <label class="block text-[11px] md:text-xs font-extrabold uppercase tracking-wider text-slate-600">Cidade</label>
+                        <select id="citySelect" class="w-full p-3 bg-slate-50 border border-slate-300 rounded-xl md:rounded-2xl focus:ring-2 focus:ring-emerald-500 focus:outline-none font-bold text-slate-800 text-sm shadow-sm transition">
+                        </select>
+                    </div>
+
+                    <div class="space-y-2.5 md:col-span-2">
+                        <label class="block text-[11px] md:text-xs font-extrabold uppercase tracking-wider text-slate-600">Quantos dias de férias você quer gastar?</label>
+                        <div class="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
+                            <button type="button" onclick="setDuration(10)" id="btn-10" class="duration-btn py-3 rounded-xl md:rounded-2xl border font-black text-xs md:text-sm transition shadow-md bg-emerald-600 text-white border-emerald-600 ring-2 ring-emerald-500/30" data-days="10">10 Dias</button>
+                            <button type="button" onclick="setDuration(15)" id="btn-15" class="duration-btn py-3 rounded-xl md:rounded-2xl border font-bold text-xs md:text-sm transition bg-white text-slate-700 border-slate-300 hover:bg-slate-50" data-days="15">15 Dias</button>
+                            <button type="button" onclick="setDuration(20)" id="btn-20" class="duration-btn py-3 rounded-xl md:rounded-2xl border font-bold text-xs md:text-sm transition bg-white text-slate-700 border-slate-300 hover:bg-slate-50" data-days="20">20 Dias</button>
+                            <button type="button" onclick="setDuration(30)" id="btn-30" class="duration-btn py-3 rounded-xl md:rounded-2xl border font-bold text-xs md:text-sm transition bg-white text-slate-700 border-slate-300 hover:bg-slate-50" data-days="30">30 Dias</button>
+                        </div>
+                    </div>
+
+                    <div class="md:col-span-2 bg-gradient-to-r from-slate-50 to-emerald-50/30 p-4 md:p-5 rounded-xl md:rounded-2xl border border-slate-200/80 space-y-1.5">
+                        <label class="flex items-start space-x-3 cursor-pointer">
+                            <input type="checkbox" id="ignoreMunicipalToggle" class="mt-0.5 w-4 h-4 md:w-5 md:h-5 text-emerald-600 rounded border-slate-300 focus:ring-emerald-500">
+                            <div>
+                                <span class="text-xs md:text-sm font-bold text-navy-900 block">Ignorar Feriados Municipais no Cálculo</span>
+                                <span class="text-[11px] md:text-xs text-slate-500 leading-tight block">Marque se sua empresa opera normalmente nos feriados locais da cidade.</span>
+                            </div>
+                        </label>
+                    </div>
+
+                    <div class="md:col-span-2 bg-navy-900 text-white p-4 md:p-6 rounded-xl md:rounded-2xl space-y-3 md:space-y-4 shadow-lg">
+                        <div class="flex items-center justify-between border-b border-slate-800 pb-2.5">
+                            <span class="text-[11px] md:text-xs font-black uppercase tracking-wider text-emerald-400">💵 Simulador Financeiro (Estimativa Bruta)</span>
+                            <span class="text-[9px] md:text-[10px] text-slate-400">Uso opcional</span>
+                        </div>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-3 md:gap-4">
+                            <div>
+                                <label class="block text-[11px] md:text-xs font-bold text-slate-300 mb-1">Seu Salário Bruto Mensal (R$)</label>
+                                <input type="text" id="baseSalary" value="" placeholder="R$ 0,00" oninput="formatCurrencyInput(this)" class="w-full p-3 bg-slate-800 border border-slate-700 rounded-xl text-sm md:text-base font-extrabold text-emerald-400 focus:ring-2 focus:ring-emerald-500 focus:outline-none tracking-wide">
+                            </div>
+                            <div class="flex items-center pt-1 md:pt-4">
+                                <label class="flex items-center space-x-2.5 cursor-pointer">
+                                    <input type="checkbox" id="abonoToggle" class="w-4 h-4 md:w-5 md:h-5 text-emerald-500 rounded border-slate-700 focus:ring-emerald-500 bg-slate-800">
+                                    <div>
+                                        <span class="text-xs font-semibold text-slate-200 block">Simular Abono Pecuniário (Venda 10d)</span>
+                                        <span class="text-[9px] md:text-[10px] text-slate-400 leading-tight block">Conforme Art. 143 CLT</span>
+                                    </div>
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <button onclick="calcularEExibirResultados()" class="w-full bg-gradient-to-r from-emerald-600 via-teal-600 to-emerald-700 hover:from-emerald-500 hover:to-teal-600 text-white font-extrabold py-3.5 md:py-4 rounded-xl md:rounded-2xl shadow-xl shadow-emerald-600/25 transition-all transform hover:-translate-y-0.5 flex items-center justify-center gap-2.5 text-sm md:text-base">
+                    <span>🚀</span>
+                    <span>Descobrir minhas melhores férias</span>
+                </button>
+            </section>
+
+            <section id="resultsSection" class="hidden space-y-5 md:space-y-6">
+                <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                    <div>
+                        <h3 class="text-xl md:text-2xl font-black text-navy-900">🏆 Melhores Janelas Encontradas</h3>
+                        <p class="text-[11px] md:text-xs text-slate-500 font-medium">Rankings gerados por eficiência matemática de dias livres.</p>
+                    </div>
+                    <span id="appliedConfigBadge" class="text-[10px] md:text-xs bg-navy-900 text-emerald-400 px-3 md:px-4 py-1.5 md:py-2 rounded-xl font-extrabold shadow-md border border-slate-800 self-start sm:self-auto"></span>
+                </div>
+
+                <div id="executiveSummaryBanner" class="bg-gradient-to-r from-teal-700 to-emerald-800 text-white p-4 md:p-5 rounded-2xl md:rounded-3xl shadow-lg flex items-center gap-3 md:gap-4">
+                    <span class="text-2xl md:text-3xl">💡</span>
+                    <div>
+                        <strong class="font-extrabold text-xs md:text-sm block">Resumo do Planejamento</strong>
+                        <p id="executiveSummaryText" class="text-[11px] md:text-xs text-emerald-100 font-medium leading-relaxed"></p>
+                    </div>
+                </div>
+
+                <div class="bg-amber-500/10 border-l-4 border-amber-500 p-3.5 md:p-4 rounded-r-2xl text-[11px] md:text-xs text-amber-900 font-medium leading-relaxed shadow-sm space-y-1">
+                    <strong class="font-bold block">⚠️ Aviso Jurídico Obrigatório (Art. 136 CLT):</strong>
+                    <p>Esta ferramenta é um <strong>simulador puramente estatístico e indicativo</strong>. A concessão e época das férias cabem ao empregador. O Folga Perfeita não possui vínculo com RH de empresas e não se responsabiliza por reservas antes de autorização formal.</p>
+                </div>
+
+                <div id="cardsContainer" class="space-y-6 md:space-y-8">
+                </div>
+            </section>
+
+        </main>
+    </div>
+
+    <footer class="bg-navy-950 text-slate-400 border-t border-slate-800 mt-12 md:mt-20 py-8 md:py-12 text-xs no-print">
+        <div class="max-w-5xl mx-auto px-4 md:px-6 space-y-4 md:space-y-6">
+            <div class="flex flex-col md:flex-row justify-between items-center gap-4 border-b border-slate-800 pb-6 text-center md:text-left">
+                <div>
+                    <div class="flex items-center justify-center md:justify-start space-x-2">
+                        <span class="font-extrabold text-white text-sm">Folga Perfeita &copy; 2026</span>
+                        <span class="text-[9px] font-bold bg-slate-800 text-slate-300 border border-slate-700 px-2 py-0.5 rounded">v1.9.2 Responsive</span>
+                    </div>
+                    <p class="text-slate-500 text-[11px] md:text-xs mt-1">Simulador independente de otimização de folgas CLT.</p>
+                </div>
+                <div class="flex flex-wrap justify-center gap-3 md:gap-4 text-slate-300 font-medium text-[11px] md:text-xs">
+                    <button onclick="openModal('termsModal')" class="hover:text-emerald-400 transition">Termos de Uso</button>
+                    <span>•</span>
+                    <button onclick="openModal('privacyModal')" class="hover:text-emerald-400 transition">Privacidade & LGPD</button>
+                    <span>•</span>
+                    <button onclick="openModal('legalModal')" class="hover:text-emerald-400 transition">Aviso Legal (Art. 136 CLT)</button>
+                </div>
+            </div>
+            <p class="text-center text-[10px] md:text-[11px] text-slate-600">
+                Zero Data Footprint Architecture • Dados processados localmente no seu navegador sem retenção em servidores centrais.
+            </p>
         </div>
-      </div>
+    </footer>
 
-    </div>
-  </header>
-
-  <!-- BARRA DE FILTROS POR CATEGORIAS (Pílulas integradas ao design) -->
-  <nav id="category-filter-bar" class="category-filter-bar" aria-label="Filtro de Categorias"></nav>
-
-  <!-- CARROSSEL DE NOTÍCIAS -->
-  <section class="carousel-section">
-    <div class="carousel-header">
-      <span class="breaking-badge">🔥 ÚLTIMAS ATUALIZAÇÕES</span>
-      <div class="carousel-controls">
-        <button id="btn-carousel-prev" class="carousel-btn">‹</button>
-        <button id="btn-carousel-next" class="carousel-btn">›</button>
-      </div>
-    </div>
-    <div id="carousel-track" class="carousel-track"></div>
-  </section>
-
-  <!-- PAINEL PRINCIPAL -->
-  <main class="main-layout">
-    <div id="sectors-container" class="sectors-grid"></div>
-  </main>
-
-  <!-- MENU LATERAL -->
-  <div id="sidebar-overlay" class="sidebar-overlay"></div>
-  <aside id="sidebar" class="sidebar">
-    <div class="sidebar-header">
-      <h2>Navegação</h2>
-      <button id="btn-close-sidebar" class="close-btn">&times;</button>
-    </div>
-
-    <nav class="sidebar-nav">
-      <button class="nav-item active" data-view="feed"><span class="nav-icon">📰</span> Central de Notícias</button>
-      <button class="nav-item" data-view="saved"><span class="nav-icon">🔖</span> Salvos para Leitura</button>
-      <button class="nav-item" data-view="stats"><span class="nav-icon">📊</span> Painel de Hábitos</button>
-      <button class="nav-item" data-view="settings"><span class="nav-icon">⚙️</span> Configurações e Fontes</button>
-    </nav>
-  </aside>
-
-  <!-- BOTÃO FLUTUANTE ERGONÔMICO -->
-  <button id="btn-open-menu" class="floating-menu-btn" title="Abrir menu">☰</button>
-
-  <!-- MODAL DE CONFIGURAÇÕES -->
-  <div id="settings-modal" class="overlay-screen">
-    <div class="modal-content">
-      <div class="modal-header">
-        <h2>Ajustar Editorias e Fontes</h2>
-        <button id="btn-close-settings" class="close-btn">&times;</button>
-      </div>
-
-      <div class="custom-keywords-box">
-        <label for="settings-keywords"><strong>Termos de Destaque / Favoritos:</strong></label>
-        <input type="text" id="settings-keywords">
-      </div>
-
-      <div class="custom-keywords-box" style="border-color: var(--accent-primary);">
-        <label><strong>➕ Adicionar Novo Feed RSS Personalizado:</strong></label>
-        <p style="font-size: 0.78rem; color: var(--text-secondary); margin-top: 4px;">Cole o link de qualquer blog ou portal:</p>
-        <div style="display: flex; gap: 8px; margin-top: 10px;">
-          <input type="text" id="custom-rss-name" placeholder="Nome (Ex: Cinema Noir)" style="flex: 1; margin:0;">
-          <input type="text" id="custom-rss-url" placeholder="URL do RSS (https://...)" style="flex: 2; margin:0;">
+    <!-- Modais -->
+    <div id="termsModal" class="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4 modal-backdrop">
+        <div class="bg-white rounded-2xl md:rounded-3xl max-w-2xl w-full p-6 md:p-8 space-y-4 max-h-[85vh] overflow-y-auto text-slate-700 shadow-2xl">
+            <div class="flex justify-between items-center border-b pb-3">
+                <h3 class="text-base md:text-lg font-black text-navy-900">Termos de Uso — Folga Perfeita</h3>
+                <button onclick="closeModal('termsModal')" class="text-slate-400 hover:text-slate-700 font-bold text-lg">✕</button>
+            </div>
+            <div class="space-y-2.5 text-xs leading-relaxed">
+                <p><strong>1. Natureza do Simulador:</strong> O Folga Perfeita é um software simulador independente de caráter puramente informativo e estatístico.</p>
+                <p><strong>2. Soberania do Empregador (Art. 136 CLT):</strong> A aprovação de férias é decisão exclusiva do RH e da empresa.</p>
+            </div>
+            <div class="pt-3 text-right"><button onclick="closeModal('termsModal')" class="bg-navy-900 text-white px-5 py-2 rounded-xl font-bold text-xs">Entendido</button></div>
         </div>
-        <button id="btn-add-custom-rss" class="primary-btn" style="margin-top: 10px; padding: 8px; font-size: 0.85rem;">Adicionar esta Fonte</button>
-      </div>
-
-      <div class="reorder-container">
-        <label><strong>Ordem das Editorias e Fontes:</strong></label>
-        <div class="reorder-list" id="settings-reorder-list"></div>
-      </div>
-
-      <button id="btn-save-settings" class="primary-btn">Salvar Alterações</button>
     </div>
-  </div>
 
-  <!-- LEITURA LIMPA (READER VIEW) -->
-  <div id="reader-modal" class="overlay-screen">
-    <div class="reader-content">
-      <button id="btn-close-reader" class="close-btn">&times;</button>
-      <div id="reader-body"></div>
+    <div id="privacyModal" class="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4 modal-backdrop">
+        <div class="bg-white rounded-2xl md:rounded-3xl max-w-2xl w-full p-6 md:p-8 space-y-4 max-h-[85vh] overflow-y-auto text-slate-700 shadow-2xl">
+            <div class="flex justify-between items-center border-b pb-3">
+                <h3 class="text-base md:text-lg font-black text-navy-900">Política de Privacidade & LGPD</h3>
+                <button onclick="closeModal('privacyModal')" class="text-slate-400 hover:text-slate-700 font-bold text-lg">✕</button>
+            </div>
+            <div class="space-y-2.5 text-xs leading-relaxed">
+                <p><strong>1. Privacidade:</strong> Operamos sob arquitetura <em>Zero Data Footprint</em>.</p>
+                <p><strong>2. Processamento Local:</strong> Nenhum dado financeiro digitado é enviado ou armazenado em servidores centrais.</p>
+            </div>
+            <div class="pt-3 text-right"><button onclick="closeModal('privacyModal')" class="bg-navy-900 text-white px-5 py-2 rounded-xl font-bold text-xs">Fechar</button></div>
+        </div>
     </div>
-  </div>
 
-  <script src="./script.js"></script>
+    <div id="legalModal" class="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4 modal-backdrop">
+        <div class="bg-white rounded-2xl md:rounded-3xl max-w-2xl w-full p-6 md:p-8 space-y-4 max-h-[85vh] overflow-y-auto text-slate-700 shadow-2xl">
+            <div class="flex justify-between items-center border-b pb-3">
+                <h3 class="text-base md:text-lg font-black text-navy-900">Aviso Legal — Fundamentos Jurídicos</h3>
+                <button onclick="closeModal('legalModal')" class="text-slate-400 hover:text-slate-700 font-bold text-lg">✕</button>
+            </div>
+            <div class="space-y-2.5 text-xs leading-relaxed">
+                <p><strong>Art. 134, § 3º da CLT:</strong> Impede o início de férias nos dois dias anteriores a feriados ou DSR.</p>
+                <p><strong>Art. 143 da CLT:</strong> Regras sobre o abono pecuniário (venda de até 1/3 das férias).</p>
+            </div>
+            <div class="pt-3 text-right"><button onclick="closeModal('legalModal')" class="bg-navy-900 text-white px-5 py-2 rounded-xl font-bold text-xs">Compreendido</button></div>
+        </div>
+    </div>
+
+    <script>
+        let selectedDuration = 10;
+        let holidaysDatabase = {
+            holidays: [
+                { date: "2027-01-01", name: "Confraternização Universal", category: "national_holiday" },
+                { date: "2027-03-23", name: "Aniversário de Florianópolis", category: "municipal_holiday" },
+                { date: "2027-04-21", name: "Tiradentes", category: "national_holiday" },
+                { date: "2027-05-01", name: "Dia do Trabalho", category: "national_holiday" },
+                { date: "2027-08-11", name: "Criação de SC", category: "state_holiday" },
+                { date: "2027-09-07", name: "Independência", category: "national_holiday" },
+                { date: "2027-10-12", name: "Nossa Sra Aparecida", category: "national_holiday" },
+                { date: "2027-11-02", name: "Finados", category: "national_holiday" },
+                { date: "2027-11-15", name: "Proclamação da República", category: "national_holiday" },
+                { date: "2027-12-25", name: "Natal", category: "national_holiday" }
+            ]
+        };
+
+        const citiesByState = {
+            SC: ["Florianópolis", "Joinville", "Blumenau", "Chapecó", "Criciúma", "Itajaí", "Balneário Camboriú"],
+            SP: ["São Paulo", "Campinas", "Santos", "Ribeirão Preto", "São José dos Campos"],
+            RJ: ["Rio de Janeiro", "Niterói", "Petrópolis", "Volta Redonda"],
+            RS: ["Porto Alegre", "Caxias do Sul", "Pelotas", "Canoas", "Santa Maria"],
+            PR: ["Curitiba", "Londrina", "Maringá", "Ponta Grossa"]
+        };
+
+        window.addEventListener('DOMContentLoaded', () => {
+            updateCityDropdown();
+        });
+
+        function trackGA4Event(eventName, params = {}) {
+            if (typeof gtag === 'function') {
+                gtag('event', eventName, params);
+            }
+        }
+
+        function updateCityDropdown() {
+            const stateSelect = document.getElementById('stateSelect').value;
+            const citySelect = document.getElementById('citySelect');
+            const cities = citiesByState[stateSelect] || [citiesByState.SC[0]];
+
+            citySelect.innerHTML = '';
+            cities.forEach(c => {
+                const opt = document.createElement('option');
+                opt.value = c;
+                opt.innerText = c;
+                citySelect.appendChild(opt);
+            });
+        }
+
+        function resetarSimuladorDoZero() {
+            document.getElementById('stateSelect').value = 'SC';
+            updateCityDropdown();
+            setDuration(10);
+            document.getElementById('ignoreMunicipalToggle').checked = false;
+            document.getElementById('baseSalary').value = '';
+            document.getElementById('abonoToggle').checked = false;
+            document.getElementById('resultsSection').classList.add('hidden');
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
+        function formatCurrencyInput(input) {
+            let value = input.value.replace(/\D/g, '');
+            if (value === '') {
+                input.value = '';
+                return;
+            }
+            const floatValue = parseFloat(value) / 100;
+            input.value = floatValue.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+        }
+
+        function getSalaryNumericValue() {
+            const raw = document.getElementById('baseSalary').value;
+            if (!raw) return 3800.00;
+            const clean = raw.replace(/[^\d,]/g, '').replace(',', '.');
+            return parseFloat(clean) || 3800.00;
+        }
+
+        function setDuration(days) {
+            selectedDuration = days;
+            [10, 15, 20, 30].forEach(d => {
+                const btn = document.getElementById(`btn-${d}`);
+                if (d === days) {
+                    btn.className = "duration-btn py-3 rounded-xl md:rounded-2xl border font-black text-xs md:text-sm transition shadow-md bg-emerald-600 text-white border-emerald-600 ring-2 ring-emerald-500/30";
+                } else {
+                    btn.className = "duration-btn py-3 rounded-xl md:rounded-2xl border font-bold text-xs md:text-sm transition bg-white text-slate-700 border-slate-300 hover:bg-slate-50";
+                }
+            });
+        }
+
+        function openModal(id) { document.getElementById(id).classList.remove('hidden'); }
+        function closeModal(id) { document.getElementById(id).classList.add('hidden'); }
+
+        function formatDateBR(dateStr) {
+            const parts = dateStr.split('-');
+            if (parts.length !== 3) return dateStr;
+            return `${parts[2]}/${parts[1]}/${parts[0]}`;
+        }
+
+        function getSeasonTheme(monthNumber) {
+            if ([12, 1, 2].includes(monthNumber)) {
+                return {
+                    name: 'Verão ☀️',
+                    bgGradient: 'bg-gradient-to-br from-amber-50 via-orange-50 to-yellow-100 text-slate-900',
+                    border: 'border-amber-300',
+                    badgeBg: 'bg-amber-500 text-white',
+                    watermark: '☀️'
+                };
+            } else if ([6, 7, 8].includes(monthNumber)) {
+                return {
+                    name: 'Inverno ❄️',
+                    bgGradient: 'bg-gradient-to-br from-slate-900 via-slate-900 to-indigo-950 text-white',
+                    border: 'border-blue-500/40',
+                    badgeBg: 'bg-blue-600 text-white',
+                    watermark: '❄️'
+                };
+            } else if ([3, 4, 5].includes(monthNumber)) {
+                return {
+                    name: 'Outono 🍂',
+                    bgGradient: 'bg-gradient-to-br from-stone-900 via-stone-900 to-amber-950 text-white',
+                    border: 'border-amber-700/50',
+                    badgeBg: 'bg-amber-700 text-amber-100',
+                    watermark: '🍂'
+                };
+            } else {
+                return {
+                    name: 'Primavera 🌸',
+                    bgGradient: 'bg-gradient-to-br from-emerald-50 via-teal-50 to-green-100 text-slate-900',
+                    border: 'border-emerald-300',
+                    badgeBg: 'bg-teal-600 text-white',
+                    watermark: '🌸'
+                };
+            }
+        }
+
+        function calcularEExibirResultados() {
+            const resultsSection = document.getElementById('resultsSection');
+            const cardsContainer = document.getElementById('cardsContainer');
+            const ignoreMunicipal = document.getElementById('ignoreMunicipalToggle').checked;
+            const city = document.getElementById('citySelect').value || "Florianópolis";
+            const state = document.getElementById('stateSelect').value || "SC";
+            const salary = getSalaryNumericValue();
+            const wantsAbono = document.getElementById('abonoToggle').checked;
+
+            // Disparo de Evento GA4
+            trackGA4Event('simulacao_realizada', {
+                'duracao_dias': selectedDuration,
+                'cidade': city,
+                'estado': state,
+                'sem_feriado_municipal': ignoreMunicipal,
+                'com_abono': wantsAbono
+            });
+
+            const calendar = [];
+            const holidaysMap = new Map();
+            holidaysDatabase.holidays.forEach(h => {
+                if (ignoreMunicipal && h.category === 'municipal_holiday') return;
+                holidaysMap.set(h.date, h);
+            });
+
+            let curr = new Date(2027, 0, 1);
+            let endYr = new Date(2027, 11, 31);
+            while (curr <= endYr) {
+                const y = curr.getFullYear();
+                const m = String(curr.getMonth() + 1).padStart(2, '0');
+                const d = String(curr.getDate()).padStart(2, '0');
+                const key = `${y}-${m}-${d}`;
+                const dow = curr.getDay();
+                const isWk = (dow === 0 || dow === 6);
+                const isHol = holidaysMap.has(key);
+
+                calendar.push({
+                    dateKey: key,
+                    dateObj: new Date(curr),
+                    dayOfWeek: dow,
+                    isWeekend: isWk,
+                    isHoliday: isHol,
+                    isOffDay: isWk || isHol
+                });
+                curr.setDate(curr.getDate() + 1);
+            }
+
+            const validScenarios = [];
+            for (let i = 0; i <= calendar.length - selectedDuration; i++) {
+                if (calendar[i].dayOfWeek !== 1) continue;
+
+                const startIdx = i;
+                const endIdx = i + selectedDuration - 1;
+
+                let expStart = startIdx;
+                while (expStart > 0 && calendar[expStart - 1].isOffDay) expStart--;
+
+                let expEnd = endIdx;
+                while (expEnd < calendar.length - 1 && calendar[expEnd + 1].isOffDay) expEnd++;
+
+                const totalConsecutive = (expEnd - expStart) + 1;
+                const bonusDays = totalConsecutive - selectedDuration;
+
+                if (bonusDays > 0) {
+                    validScenarios.push({
+                        formalStartKey: calendar[startIdx].dateKey,
+                        formalEndKey: calendar[endIdx].dateKey,
+                        expandedStartKey: calendar[expStart].dateKey,
+                        expandedEndKey: calendar[expEnd].dateKey,
+                        expStartIdx: expStart,
+                        expEndIdx: expEnd,
+                        formalStartIdx: startIdx,
+                        formalEndIdx: endIdx,
+                        formalDays: selectedDuration,
+                        totalConsecutive: totalConsecutive,
+                        bonusDays: bonusDays,
+                        score: (totalConsecutive / selectedDuration) * 100 + (bonusDays * 30)
+                    });
+                }
+            }
+
+            validScenarios.sort((a, b) => b.score - a.score);
+
+            const scenarios = [];
+            for (const sc of validScenarios) {
+                const tooClose = scenarios.some(s => Math.abs(s.expStartIdx - sc.expStartIdx) < 14);
+                if (!tooClose) scenarios.push(sc);
+                if (scenarios.length >= 3) break;
+            }
+
+            resultsSection.classList.remove('hidden');
+            document.getElementById('appliedConfigBadge').innerText = `${city} / ${state} • ${selectedDuration} Dias Formais`;
+
+            if (scenarios.length === 0) {
+                cardsContainer.innerHTML = `
+                    <div class="bg-white rounded-2xl md:rounded-3xl p-6 md:p-8 text-center space-y-3 border border-slate-200">
+                        <span class="text-3xl md:text-4xl">🔍</span>
+                        <h4 class="text-base md:text-lg font-bold text-slate-800">Nenhuma combinação ideal encontrada</h4>
+                        <p class="text-xs text-slate-500 max-w-md mx-auto">Tente alterar a quantidade de dias para buscar pontes perfeitas.</p>
+                    </div>`;
+                resultsSection.scrollIntoView({ behavior: 'smooth' });
+                return;
+            }
+
+            const maxBonus = scenarios[0] ? scenarios[0].bonusDays : 0;
+            const maxTotal = scenarios[0] ? scenarios[0].totalConsecutive : selectedDuration;
+            document.getElementById('executiveSummaryText').innerText = `Para os seus ${selectedDuration} dias escolhidos, encontramos janelas que ampliam seu descanso em até +${maxBonus} dias bônus, totalizando até ${maxTotal} dias seguidos de folga em 2027!`;
+
+            const umTerco = (salary / 3);
+            const abonoValue = wantsAbono ? ((salary / 30) * 10) + (((salary / 30) * 10) / 3) : 0;
+
+            let html = '';
+            scenarios.forEach((sc, idx) => {
+                const startMonth = parseInt(sc.expandedStartKey.split('-')[1]);
+                const season = getSeasonTheme(startMonth);
+                
+                const rankLabels = [
+                    `🥇 Campeã do Ano (${season.name})`,
+                    `🥈 Segunda Opção (${season.name})`,
+                    `🥉 Terceira Janela (${season.name})`
+                ];
+                const titleBadge = rankLabels[idx] || `Opção #${idx+1} (${season.name})`;
+                const gridCalendarHTML = renderMiniCalendarGrid(sc, calendar);
+                const cardId = `vacation-card-${idx}`;
+
+                const isDarkTheme = [6,7,8,3,4,5].includes(startMonth);
+                const textColorClass = isDarkTheme ? 'text-slate-100' : 'text-slate-900';
+                const innerBoxClass = isDarkTheme ? 'bg-slate-900/90 text-slate-100 border-slate-700' : 'bg-white text-slate-900 border-slate-200';
+                const cardBgStyle = season.bgGradient;
+
+                html += `
+                <div id="${cardId}" class="glass-card rounded-2xl md:rounded-3xl p-4 sm:p-6 md:p-8 shadow-xl border-2 ${season.border} ${cardBgStyle} space-y-4 md:space-y-6 transition hover:shadow-2xl relative overflow-hidden">
+                    <div class="absolute -right-4 -bottom-4 md:-right-6 md:-bottom-6 text-7xl md:text-9xl opacity-10 pointer-events-none select-none">${season.watermark}</div>
+
+                    <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2.5 relative z-10">
+                        <span class="text-[11px] md:text-xs font-black uppercase px-3.5 py-1.5 rounded-full ${season.badgeBg} tracking-wider shadow-sm">
+                            ${titleBadge}
+                        </span>
+                        <span class="text-[11px] md:text-xs font-bold ${textColorClass} ${innerBoxClass} px-3 py-1.5 rounded-xl border shadow-sm">
+                            📅 Folga Total: <strong>${formatDateBR(sc.expandedStartKey)} a ${formatDateBR(sc.expandedEndKey)}</strong>
+                        </span>
+                    </div>
+
+                    <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 md:gap-4 relative z-10">
+                        <div class="bg-gradient-to-br from-emerald-500 to-teal-600 text-white p-4 md:p-5 rounded-xl md:rounded-2xl shadow-lg shadow-emerald-500/20 text-center">
+                            <span class="block text-3xl md:text-4xl font-black">${sc.totalConsecutive} DIAS</span>
+                            <span class="text-[10px] md:text-xs font-bold uppercase tracking-wider text-emerald-100 block mt-0.5">Descanso Obtido</span>
+                        </div>
+                        <div class="bg-navy-900 text-white p-4 md:p-5 rounded-xl md:rounded-2xl shadow-md text-center">
+                            <span class="block text-3xl md:text-4xl font-black text-slate-100">${sc.formalDays} DIAS</span>
+                            <span class="text-[10px] md:text-xs font-bold uppercase tracking-wider text-slate-400 block mt-0.5">Desconto do Saldo</span>
+                        </div>
+                        <div class="${innerBoxClass} border p-4 md:p-5 rounded-xl md:rounded-2xl text-center shadow-sm">
+                            <span class="block text-3xl md:text-4xl font-black text-emerald-500">+${sc.bonusDays} DIAS</span>
+                            <span class="text-[10px] md:text-xs font-bold uppercase tracking-wider opacity-80 block mt-0.5">Ganho de Bônus</span>
+                        </div>
+                    </div>
+
+                    <div class="space-y-2.5 relative z-10">
+                        <div class="flex flex-col sm:flex-row justify-between sm:items-center text-[11px] md:text-xs font-extrabold uppercase tracking-wider ${textColorClass} gap-1">
+                            <span>📅 Calendário do Período:</span>
+                            <span class="text-[10px] md:text-[11px] opacity-80 font-normal">Legenda: <span class="text-emerald-500 font-bold">🟩 Férias</span> | <span class="text-blue-400 font-bold">🟦 Feriado</span> | <span class="font-bold">⬛ FDS</span></span>
+                        </div>
+                        <div class="bg-navy-950 p-3.5 md:p-5 rounded-xl md:rounded-2xl border border-slate-800 shadow-inner overflow-x-auto no-scrollbar">
+                            <div class="grid grid-cols-7 gap-1 md:gap-1.5 text-center min-w-[300px]">
+                                <span class="text-[9px] md:text-[10px] font-bold text-slate-400 pb-1.5">Seg</span>
+                                <span class="text-[9px] md:text-[10px] font-bold text-slate-400 pb-1.5">Ter</span>
+                                <span class="text-[9px] md:text-[10px] font-bold text-slate-400 pb-1.5">Qua</span>
+                                <span class="text-[9px] md:text-[10px] font-bold text-slate-400 pb-1.5">Qui</span>
+                                <span class="text-[9px] md:text-[10px] font-bold text-slate-400 pb-1.5">Sex</span>
+                                <span class="text-[9px] md:text-[10px] font-bold text-slate-400 pb-1.5">Sáb</span>
+                                <span class="text-[9px] md:text-[10px] font-bold text-slate-400 pb-1.5">Dom</span>
+                                ${gridCalendarHTML}
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="${innerBoxClass} border p-4 md:p-5 rounded-xl md:rounded-2xl text-xs space-y-2 shadow-sm relative z-10">
+                        <div class="flex justify-between items-center border-b border-slate-200/40 pb-2">
+                            <strong class="font-extrabold text-xs md:text-sm">💵 Simulador Financeiro (Estimativa Bruta):</strong>
+                            <span class="text-[9px] md:text-[10px] text-emerald-600 font-bold bg-emerald-100 px-2 py-0.5 rounded">Simulação</span>
+                        </div>
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs md:text-sm pt-1">
+                            <p>• Adicional de 1/3 Constitucional: <strong class="text-emerald-500">R$ ${umTerco.toLocaleString('pt-BR', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</strong></p>
+                            ${wantsAbono ? `<p>• Abono Pecuniário (10d + 1/3): <strong class="text-emerald-500">R$ ${abonoValue.toLocaleString('pt-BR', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</strong></p>` : ''}
+                        </div>
+                        <p class="text-[10px] md:text-[11px] opacity-75 pt-1 leading-normal">* Estimativa bruta indicativa.</p>
+                    </div>
+
+                    <div class="${innerBoxClass} border p-3.5 md:p-4 rounded-xl md:rounded-2xl space-y-2 no-print relative z-10 shadow-sm">
+                        <div class="flex justify-between items-center text-[10px] md:text-[11px] font-bold uppercase">
+                            <span>✈️ Planeje sua viagem</span>
+                            <span class="text-[9px] opacity-70 font-normal">Links recomendados</span>
+                        </div>
+                        <div class="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                            <a href="https://www.skyscanner.com.br" target="_blank" onclick="trackGA4Event('clique_parceiro_viagem', {'parceiro': 'skyscanner'})" class="bg-white text-slate-800 font-bold py-2 px-2.5 rounded-lg border text-xs text-center transition shadow-sm hover:bg-slate-50">✈️ Skyscanner</a>
+                            <a href="https://www.booking.com" target="_blank" onclick="trackGA4Event('clique_parceiro_viagem', {'parceiro': 'booking'})" class="bg-white text-slate-800 font-bold py-2 px-2.5 rounded-lg border text-xs text-center transition shadow-sm hover:bg-slate-50">🏨 Booking</a>
+                            <a href="https://www.kayak.com.br" target="_blank" onclick="trackGA4Event('clique_parceiro_viagem', {'parceiro': 'kayak'})" class="bg-white text-slate-800 font-bold py-2 px-2.5 rounded-lg border text-xs text-center transition shadow-sm hover:bg-slate-50">🚗 KAYAK</a>
+                        </div>
+                    </div>
+
+                    <div class="pt-1 flex flex-col sm:flex-row gap-2.5 no-print relative z-10">
+                        <button onclick="baixarCardComoImagem('${cardId}')" class="flex-1 bg-teal-800 hover:bg-teal-900 text-white font-extrabold py-3 px-3.5 rounded-xl text-xs transition shadow-md flex items-center justify-center gap-2">
+                            <span>📸</span> Baixar Cartão (PNG)
+                        </button>
+                        <button onclick="window.print()" class="flex-1 bg-navy-900 hover:bg-slate-800 text-white font-extrabold py-3 px-3.5 rounded-xl text-xs transition shadow-md flex items-center justify-center gap-2">
+                            <span>📄</span> Imprimir A4
+                        </button>
+                        <button onclick="shareWhatsAppNatural(this, '${sc.expandedStartKey}', '${sc.expandedEndKey}', ${sc.totalConsecutive}, ${sc.formalDays})" class="flex-1 bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold py-3 px-3.5 rounded-xl text-xs transition shadow-md flex items-center justify-center gap-2">
+                            <span>📲</span> WhatsApp
+                        </button>
+                    </div>
+                </div>`;
+            });
+
+            cardsContainer.innerHTML = html;
+            resultsSection.scrollIntoView({ behavior: 'smooth' });
+        }
+
+        function renderMiniCalendarGrid(scenario, calendar) {
+            let cells = '';
+            const startIdx = scenario.expStartIdx;
+            const endIdx = scenario.expEndIdx;
+
+            const firstDayObj = calendar[startIdx];
+            let jsDayOfWeek = firstDayObj.dayOfWeek; 
+            let gridOffset = jsDayOfWeek === 0 ? 6 : jsDayOfWeek - 1; 
+
+            for (let pad = 0; pad < gridOffset; pad++) {
+                cells += `<div class="p-1.5 md:p-2 rounded-lg md:rounded-xl bg-slate-900/40 opacity-20"></div>`;
+            }
+
+            for (let i = startIdx; i <= endIdx; i++) {
+                const dayObj = calendar[i];
+                const isFormalVacation = (i >= scenario.formalStartIdx && i <= scenario.formalEndIdx);
+                const parts = dayObj.dateKey.split('-');
+                const dayNum = parts[2];
+
+                let bgClass = "bg-slate-700 text-slate-200 border border-slate-600";
+                let labelTooltip = "FDS/Emenda";
+
+                if (isFormalVacation) {
+                    bgClass = "bg-emerald-600 text-white font-black ring-2 ring-emerald-400";
+                    labelTooltip = "Férias";
+                } else if (dayObj.isHoliday) {
+                    bgClass = "bg-blue-600 text-white font-black";
+                    labelTooltip = "Feriado";
+                }
+
+                cells += `
+                <div class="p-1.5 md:p-2.5 rounded-lg md:rounded-xl ${bgClass} text-[11px] md:text-xs flex flex-col items-center justify-center shadow-sm" title="${dayObj.dateKey}: ${labelTooltip}">
+                    <span class="text-[11px] md:text-xs font-bold leading-none">${dayNum}</span>
+                    <span class="text-[8px] md:text-[9px] opacity-80 uppercase font-semibold mt-0.5">${labelTooltip}</span>
+                </div>`;
+            }
+
+            return cells;
+        }
+
+        function baixarCardComoImagem(cardId) {
+            trackGA4Event('baixar_cartao_png', { 'card_id': cardId });
+            const cardElement = document.getElementById(cardId);
+            const noPrintElements = cardElement.querySelectorAll('.no-print');
+            noPrintElements.forEach(el => el.style.display = 'none');
+
+            html2canvas(cardElement, { scale: 2, backgroundColor: null }).then(canvas => {
+                noPrintElements.forEach(el => el.style.display = '');
+                const link = document.createElement('a');
+                link.download = 'folga-perfeita-planejamento.png';
+                link.href = canvas.toDataURL('image/png');
+                link.click();
+            }).catch(err => {
+                noPrintElements.forEach(el => el.style.display = '');
+                console.error("Erro ao gerar imagem:", err);
+                alert("Não foi possível gerar a imagem automaticamente neste dispositivo.");
+            });
+        }
+
+        function shareWhatsAppNatural(btnElement, startKey, endKey, totalDays, formalDays) {
+            trackGA4Event('compartilhar_whatsapp', { 'dias_totais': totalDays, 'dias_formais': formalDays });
+            const message = `Olha só o que achei no Folga Perfeita! 🏝️ Consegui montar *${totalDays} dias seguidos de folga* gastando só *${formalDays} dias do meu saldo* de férias.\n\nPeríodo: ${formatDateBR(startKey)} até ${formatDateBR(endKey)}.\n\nVale a pena dar uma olhada para planejarmos!`;
+            window.open(`https://api.whatsapp.com/send?text=${encodeURIComponent(message)}`, '_blank');
+
+            const originalHTML = btnElement.innerHTML;
+            btnElement.innerHTML = `<span>✅</span> Pronto!`;
+            btnElement.classList.remove('bg-emerald-600', 'hover:bg-emerald-700');
+            btnElement.classList.add('bg-teal-700');
+            setTimeout(() => {
+                btnElement.innerHTML = originalHTML;
+                btnElement.classList.remove('bg-teal-700');
+                btnElement.classList.add('bg-emerald-600', 'hover:bg-emerald-700');
+            }, 3000);
+        }
+    </script>
 </body>
 </html>
