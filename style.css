@@ -579,3 +579,69 @@ img {
   border-color: var(--accent-primary, #2563eb);
   font-weight: 600;
 }
+/* ==========================================================================
+   CONFIGURAÇÃO PADRÃO (DESKTOP / COMPUTADOR)
+   ========================================================================== */
+
+/* Botão do menu no desktop ou posições padrão */
+.floating-menu-btn {
+  position: fixed;
+  bottom: 20px;
+  right: 20px;
+  z-index: 99;
+}
+
+/* Barra de categorias no topo no PC */
+.category-filter-bar {
+  position: relative;
+  top: 0;
+  width: 100%;
+}
+
+
+/* ==========================================================================
+   CONFIGURAÇÕES EXCLUSIVAS PARA CELULAR (MOBILE - TASTO DIREITO / ERGONOMIA)
+   ========================================================================== */
+@media (max-width: 768px) {
+
+  /* 1. Botão do menu no canto inferior DIREITO (ao alcance do polegar) */
+  .floating-menu-btn {
+    bottom: 75px; /* Fica um pouco acima da barra de categorias */
+    right: 16px;
+    left: auto;   /* Garante que não vá para a esquerda */
+    width: 52px;
+    height: 52px;
+    border-radius: 50%;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.4);
+  }
+
+  /* 2. Barra de Categorias fixa no RODAPÉ da tela */
+  .category-filter-bar {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    top: auto;
+    z-index: 98;
+    background: var(--surface-color, #121212);
+    border-top: 1px solid var(--card-border, #222);
+    border-bottom: none;
+    padding: 10px 14px;
+    box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.3);
+  }
+
+  /* 3. Espaçamento no final da página para o conteúdo não ficar coberto pela barra inferior */
+  main.main-layout {
+    padding-bottom: 80px;
+  }
+  
+  /* 4. Menu lateral deslizando da DIREITA */
+  .sidebar {
+    right: 0;
+    left: auto;
+    transform: translateX(100%);
+  }
+  .sidebar.active {
+    transform: translateX(0);
+  }
+}
