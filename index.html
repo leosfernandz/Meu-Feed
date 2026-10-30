@@ -43,7 +43,7 @@
   <header class="app-header">
     <div class="header-container">
       
-      <!-- LOGO E TÍTULO (Mensagem de sincronização removida) -->
+      <!-- LOGO E TÍTULO LIMPOS -->
       <div class="brand-zone" id="brand-home-btn" style="cursor: pointer; display: flex; align-items: center; gap: 10px;" title="Voltar ao início">
         <img src="./logo.png" alt="Logo Meu Feed" style="height: 36px; width: auto; object-fit: contain;">
         <h1 style="margin: 0; line-height: 1;">Meu <span>Feed</span></h1>
@@ -61,7 +61,7 @@
     </div>
   </header>
 
-  <!-- BARRA DE FILTROS POR CATEGORIAS (Pílulas integradas ao design) -->
+  <!-- BARRA DE FILTROS POR CATEGORIAS (No PC fica no topo; no mobile fica oculta pois vai para o menu) -->
   <nav id="category-filter-bar" class="category-filter-bar" aria-label="Filtro de Categorias"></nav>
 
   <!-- CARROSSEL DE NOTÍCIAS -->
@@ -95,9 +95,22 @@
       <button class="nav-item" data-view="stats"><span class="nav-icon">📊</span> Painel de Hábitos</button>
       <button class="nav-item" data-view="settings"><span class="nav-icon">⚙️</span> Configurações e Fontes</button>
     </nav>
+
+    <!-- SEÇÃO DE CATEGORIAS DENTRO DO MENU (Ideal para Mobile) -->
+    <div class="sidebar-section" style="padding: 0 15px; margin-top: 15px;">
+      <h3 style="font-size: 0.78rem; color: var(--text-secondary); margin-bottom: 8px; text-transform: uppercase; letter-spacing: 0.5px;">Editorias</h3>
+      <div id="sidebar-categories-container" style="display: flex; flex-direction: column; gap: 4px;">
+        <!-- Injetado dinamicamente via script.js -->
+      </div>
+    </div>
+
+    <!-- RÓTULO DE VERSÃO DO APP -->
+    <div class="sidebar-footer" style="padding: 15px; border-top: 1px solid var(--card-border); margin-top: auto; font-size: 0.75rem; color: var(--text-secondary); text-align: center;">
+      Meu Feed • v1.4.1
+    </div>
   </aside>
 
-  <!-- BOTÃO FLUTUANTE ERGONÔMICO -->
+  <!-- BOTÃO FLUTUANTE ERGONÔMICO (Mão direita) -->
   <button id="btn-open-menu" class="floating-menu-btn" title="Abrir menu">☰</button>
 
   <!-- MODAL DE CONFIGURAÇÕES -->

@@ -169,34 +169,80 @@ async function loadAllSectors() {
 /* ==========================================================================
    5. BARRA DE FILTROS (PÍLULAS)
    ========================================================================== */
+/* ==========================================================================
+   BARRA DE FILTROS E CATEGORIAS (TOPO + MENU LATERAL)
+   ========================================================================== */
 function renderCategoryFilterBar() {
-  if (!categoryFilterBar) return;
-  categoryFilterBar.innerHTML = '';
+  // 1. Renderiza no topo (para Desktop)
+  if (categoryFilterBar) {
+    categoryFilterBar.innerHTML = '';
 
-  const allBtn = document.createElement('button');
-  allBtn.className = `category-pill ${activeCategoryFilter === 'all' ? 'active' : ''}`;
-  allBtn.innerHTML = `🔥 Todas`;
-  allBtn.addEventListener('click', () => {
-    activeCategoryFilter = 'all';
-    renderCategoryFilterBar();
-    renderDashboard(searchInput.value);
-  });
-  categoryFilterBar.appendChild(allBtn);
-
-  userCategories.forEach(catKey => {
-    const catInfo = CATEGORIES_DATABASE[catKey];
-    if (!catInfo) return;
-
-    const btn = document.createElement('button');
-    btn.className = `category-pill ${activeCategoryFilter === catKey ? 'active' : ''}`;
-    btn.innerHTML = `${catInfo.icon} ${catInfo.name}`;
-    btn.addEventListener('click', () => {
-      activeCategoryFilter = catKey;
+    const allBtn = document.createElement('button');
+    allBtn.className = `category-pill ${activeCategoryFilter === 'all' ? 'active' : ''}`;
+    allBtn.innerHTML = `🔥 Todas`;
+    allBtn.addEventListener('click', () => {
+      activeCategoryFilter = 'all';
       renderCategoryFilterBar();
       renderDashboard(searchInput.value);
     });
-    categoryFilterBar.appendChild(btn);
-  });
+    categoryFilterBar.appendChild(allBtn);
+
+    userCategories.forEach(catKey => {
+      const catInfo = CATEGORIES_DATABASE[catKey];
+      if (!catInfo) return;
+
+      const btn = document.createElement('button');
+      btn.className = `category-pill ${activeCategoryFilter === catKey ? 'active' : ''}`;
+      btn.innerHTML = `${catInfo.icon} ${catInfo.name}`;
+      btn.addEventListener('click', () => {
+        activeCategoryFilter = catKey;
+        renderCategoryFilterBar();
+        renderDashboard(searchInput.value);
+      });
+      categoryFilterBar.appendChild(btn);
+    });
+  }
+
+  // 2. Renderiza dentro do Menu Lateral (Perfeito para Mobile / iPhone)
+  const sidebarCatContainer = document.getElementById('sidebar-categories-container');
+  if (sidebarCatContainer) {
+    sidebarCatContainer.innerHTML = '';
+
+    const allSidebarBtn = document.createElement('button');
+    allSidebarBtn.className = `sidebar-cat-btn ${activeCategoryFilter === 'all' ? 'active' : ''}`;
+    allSidebarBtn.innerHTML = `🔥 Todas as Notícias`;
+    allSidebarBtn.addEventListener('click', () => {
+      activeCategoryFilter = 'all';
+      renderCategoryFilterBar();
+      renderDashboard(searchInput.value);
+      closeSidebarMenu();
+    });
+    sidebarCatContainer.appendChild(allSidebarBtn);
+
+    userCategories.forEach(catKey => {
+      const catInfo = CATEGORIES_DATABASE[catKey];
+      if (!catInfo) return;
+
+      const btn = document.createElement('button');
+      btn.className = `sidebar-cat-btn ${activeCategoryFilter === catKey ? 'active' : ''}`;
+      btn.innerHTML = `${catInfo.icon} ${catInfo.name}`;
+      btn.addEventListener('click', () => {
+        activeCategoryFilter = catKey;
+        renderCategoryFilterBar();
+        renderDashboard(searchInput.value);
+        closeSidebarMenu();
+      });
+      sidebarCatContainer.appendChild(btn);
+    });
+  }
+}
+
+// Função auxiliar para fechar o menu ao selecionar uma categoria no celular
+function closeSidebarMenu() {
+  const sidebar = document.getElementById('sidebar');
+  const sidebarOverlay = document.getElementById('sidebar-overlay');
+  if (sidebar) sidebar.classList.remove('active');
+  if (sidebarOverlay) sidebarOverlay.classList.remove('active');
 }
 
 /* ==========================================================================
