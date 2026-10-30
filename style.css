@@ -650,7 +650,12 @@ img {
    ========================================================================== */
 @media (max-width: 768px) {
 
-  /* 1. Botão do menu fixo no canto inferior DIREITO, super acessível ao polegar */
+  /* 1. Oculta a barra de pílulas antiga no iPhone para não dar conflito com o Safari */
+  .category-filter-bar {
+    display: none !important;
+  }
+
+  /* 2. Botão do menu livre no canto inferior DIREITO (ao alcance do polegar) */
   .floating-menu-btn {
     position: fixed;
     bottom: 24px;
@@ -663,12 +668,7 @@ img {
     box-shadow: 0 4px 16px rgba(0,0,0,0.6);
   }
 
-  /* 2. Remove completamente a barra de pílulas antiga do rodapé para evitar conflito com o iOS */
-  .category-filter-bar {
-    display: none !important;
-  }
-
-  /* 3. Zera o espaçamento inferior que não é mais necessário */
+  /* 3. Limpa o espaçamento inferior */
   main.main-layout {
     padding-bottom: 20px;
   }
@@ -684,7 +684,7 @@ img {
   }
 }
 
-/* Estilo para os botões de categoria dentro do menu lateral */
+/* Estilo para as categorias dentro do menu lateral no celular */
 .sidebar-cat-btn {
   background: transparent;
   color: var(--text-secondary);
