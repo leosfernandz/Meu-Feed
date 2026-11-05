@@ -133,6 +133,7 @@ function cleanArticleContent(rawText) {
    5. PROCESSAMENTO DOS FEEDS (Com Fallback Seguro)
    ========================================================================== */
 async function loadAllSectors() {
+  console.log("🚀 A iniciar o carregamento dos feeds...");
   if (!sectorsContainer) return;
 
   if (currentView === 'saved') {
@@ -162,10 +163,11 @@ async function loadAllSectors() {
   const maxAgeMs = 48 * 60 * 60 * 1000;
 
   try {
-    // Tenta carregar do feed.json local
+    console.log("Tentando carregar via ./feed.json...");
     const response = await fetch('./feed.json?t=' + Date.now());
-    if (!response.ok) throw new Error('feed.json não encontrado');
+    if (!response.ok) throw new Error('feed.json não encontrado (Status ' + response.status + ')');
     const json = await response.json();
+    console.log("✅ feed.json carregado com sucesso:", json);
 
     Object.keys(json.data || {}).forEach(catKey => {
       const items = json.data[catKey] || [];
@@ -193,21 +195,26 @@ async function loadAllSectors() {
     });
 
   } catch (err) {
-    console.warn('feed.json indisponível, carregando via RSS direto...', err);
-    // FALLBACK: Se o feed.json falhar, busca direto dos RSS via proxy
+    console.warn('⚠️ feed.json indisponível. A tentar carregar via RSS direto...', err);
+    
     for (const catKey of userCategories) {
       const catInfo = CATEGORIES_DATABASE[catKey];
       if (!catInfo || !catInfo.url) continue;
 
       try {
+        console.log(`A descarregar RSS para ${catKey}: ${catInfo.url}`);
         const proxyUrl = `https://api.allorigins.win/get?url=${encodeURIComponent(catInfo.url)}`;
         const res = await fetch(proxyUrl);
         const data = await res.json();
-        if (!data || !data.contents) continue;
+        if (!data || !data.contents) {
+          console.warn(`⚠️ Sem conteúdo para ${catKey}`);
+          continue;
+        }
 
         const parser = new DOMParser();
         const xml = parser.parseFromString(data.contents, 'text/xml');
         const items = xml.querySelectorAll('item');
+        console.log(`📄 Encontrados ${items.length} itens no RSS de ${catKey}`);
         const catArticles = [];
 
         items.forEach(item => {
@@ -248,11 +255,12 @@ async function loadAllSectors() {
 
         loadedSectorsData[catKey] = catArticles;
       } catch (e) {
-        console.error(`Erro ao carregar RSS de ${catKey}:`, e);
+        console.error(`❌ Erro crítico ao carregar RSS de ${catKey}:`, e);
       }
     }
   }
 
+  console.log("📊 Total de artigos recentes recolhidos:", recentArticles.length);
   recentArticles.sort((a, b) => new Date(b.pubDate) - new Date(a.pubDate));
 
   renderCategoryFilterBar();
