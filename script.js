@@ -1,6 +1,10 @@
 /* ==========================================================================
-   1. BASE OFICIAL DE FEEDS (G1 + GLOBO ESPORTE + CUSTOMIZADOS)
+   CONFIGURAÇÃO DE PERFIS E BASE DE FEEDS
    ========================================================================== */
+const urlParams = new URLSearchParams(window.location.search);
+const isMaeProfile = urlParams.get('perfil') === 'mae';
+const STORAGE_PREFIX = isMaeProfile ? 'mae_' : '';
+
 const DEFAULT_CATEGORIES = {
   politica_br: { name: 'Política Brasileira', icon: '🏛️', url: 'https://g1.globo.com/rss/g1/politica/' },
   politica_int: { name: 'Política Internacional', icon: '🌐', url: 'https://g1.globo.com/rss/g1/mundo/' },
@@ -11,21 +15,27 @@ const DEFAULT_CATEGORIES = {
   tecnologia: { name: 'Tecnologia & Inovação', icon: '💻', url: 'https://g1.globo.com/rss/g1/tecnologia/' }
 };
 
-let customCategories = JSON.parse(localStorage.getItem('meu_feed_custom_sources')) || {};
+let customCategories = JSON.parse(localStorage.getItem(STORAGE_PREFIX + 'meu_feed_custom_sources')) || {};
 let CATEGORIES_DATABASE = { ...DEFAULT_CATEGORIES, ...customCategories };
 
-let userCategories = JSON.parse(localStorage.getItem('meu_feed_categories')) || [];
-Object.keys(DEFAULT_CATEGORIES).forEach(key => {
-  if (!userCategories.includes(key)) userCategories.push(key);
-});
-localStorage.setItem('meu_feed_categories', JSON.stringify(userCategories));
+let userCategories = JSON.parse(localStorage.getItem(STORAGE_PREFIX + 'meu_feed_categories')) || [];
+if (userCategories.length === 0) {
+  if (isMaeProfile) {
+    userCategories = ['politica_br', 'politica_int', 'economia'];
+  } else {
+    Object.keys(DEFAULT_CATEGORIES).forEach(key => {
+      if (!userCategories.includes(key)) userCategories.push(key);
+    });
+  }
+  localStorage.setItem(STORAGE_PREFIX + 'meu_feed_categories', JSON.stringify(userCategories));
+}
 
-let userKeywords = JSON.parse(localStorage.getItem('meu_feed_keywords')) || ['Internacional', 'Inter', 'Colorado', 'UFC', 'economia', 'política'];
-let savedArticles = JSON.parse(localStorage.getItem('meu_feed_saved')) || [];
-let readArticles = JSON.parse(localStorage.getItem('meu_feed_read')) || [];
-let hiddenKeywords = JSON.parse(localStorage.getItem('meu_feed_hidden_keywords')) || [];
-let readingHistory = JSON.parse(localStorage.getItem('meu_feed_history')) || [];
-let isOledMode = localStorage.getItem('meu_feed_oled') === 'true';
+let userKeywords = JSON.parse(localStorage.getItem(STORAGE_PREFIX + 'meu_feed_keywords')) || (isMaeProfile ? ['família', 'saúde', 'economia', 'brasil'] : ['Internacional', 'Inter', 'Colorado', 'UFC', 'economia', 'política']);
+let savedArticles = JSON.parse(localStorage.getItem(STORAGE_PREFIX + 'meu_feed_saved')) || [];
+let readArticles = JSON.parse(localStorage.getItem(STORAGE_PREFIX + 'meu_feed_read')) || [];
+let hiddenKeywords = JSON.parse(localStorage.getItem(STORAGE_PREFIX + 'meu_feed_hidden_keywords')) || [];
+let readingHistory = JSON.parse(localStorage.getItem(STORAGE_PREFIX + 'meu_feed_history')) || [];
+let isOledMode = localStorage.getItem(STORAGE_PREFIX + 'meu_feed_oled') === 'true';
 
 let loadedSectorsData = {}; 
 let recentArticles = [];
@@ -78,16 +88,23 @@ document.addEventListener('DOMContentLoaded', () => {
   setupEventListeners();
   if (isOledMode) document.body.classList.add('oled-mode');
 
-  if (!localStorage.getItem('meu_feed_installed')) {
-    onboardingKeywordsInput.value = userKeywords.join(', ');
-    renderCategoryGrid(onboardingCategories, userCategories);
-    onboardingScreen.classList.add('active');
+  const isInstalled = localStorage.getItem(STORAGE_PREFIX + 'meu_feed_installed');
+  if (!isInstalled) {
+    if (isMaeProfile) {
+      localStorage.setItem(STORAGE_PREFIX + 'meu_feed_installed', 'true');
+      loadAllSectors();
+    } else {
+      onboardingKeywordsInput.value = userKeywords.join(', ');
+      renderCategoryGrid(onboardingCategories, userCategories);
+      onboardingScreen.classList.add('active');
+    }
   } else {
     loadAllSectors();
   }
 });
 
 function renderCategoryGrid(container, selectedKeys) {
+  if (!container) return;
   container.innerHTML = '';
   Object.keys(CATEGORIES_DATABASE).forEach(catKey => {
     const cat = CATEGORIES_DATABASE[catKey];
@@ -100,7 +117,20 @@ function renderCategoryGrid(container, selectedKeys) {
 }
 
 /* ==========================================================================
-   4. PROCESSAMENTO DOS FEEDS (48h)
+   4. FUNÇÃO DE LIMPEZA DE TEXTO (LEGENDAS E CRÉDITOS)
+   ========================================================================== */
+function cleanArticleContent(rawText) {
+  if (!rawText) return '';
+  return rawText
+    .replace(/<figcaption[^>]*>[\s\S]*?<\/figcaption>/gi, '')
+    .replace(/(?:Foto|Crédito|Imagem|Fonte)\s*:\s*[^<\n\.\-]+(?:\/[^<\n\.\-]+)?/gi, '')
+    .replace(/\b\d{1,2}\/\d{1,2}\/\d{2,4}(?:\s*[-–—]\s*\d{1,2}h\d{0,2})?\b/gi, '')
+    .replace(/<p[^>]*>\s*(?:Policiais|Agentes|Equipes|Foto|Legenda)[^<]*?atuam[^<]*?<\/p>/gi, '')
+    .replace(/<p[^>]*>\s*<\/p>/gi, '');
+}
+
+/* ==========================================================================
+   5. PROCESSAMENTO DOS FEEDS (48h)
    ========================================================================== */
 async function loadAllSectors() {
   if (currentView === 'saved') {
@@ -145,6 +175,8 @@ async function loadAllSectors() {
       }).map(art => ({
         ...art,
         id: btoa(unescape(encodeURIComponent(art.link))),
+        description: cleanArticleContent(art.description || ''),
+        content: cleanArticleContent(art.content || art.description || ''),
         readTime: calculateReadTime(art.title + ' ' + (art.description || ''))
       }));
 
@@ -167,10 +199,7 @@ async function loadAllSectors() {
 }
 
 /* ==========================================================================
-   5. BARRA DE FILTROS (PÍLULAS)
-   ========================================================================== */
-/* ==========================================================================
-   BARRA DE FILTROS E CATEGORIAS (TOPO + MENU LATERAL)
+   6. BARRA DE FILTROS (TOPO + MENU LATERAL MOBILE)
    ========================================================================== */
 function renderCategoryFilterBar() {
   // 1. Renderiza no topo (para Desktop)
@@ -237,18 +266,18 @@ function renderCategoryFilterBar() {
   }
 }
 
-// Função auxiliar para fechar o menu ao selecionar uma categoria no celular
 function closeSidebarMenu() {
   const sidebar = document.getElementById('sidebar');
   const sidebarOverlay = document.getElementById('sidebar-overlay');
   if (sidebar) sidebar.classList.remove('active');
   if (sidebarOverlay) sidebarOverlay.classList.remove('active');
-}
+} 
 
 /* ==========================================================================
-   6. RENDERIZAÇÃO DE TELA (CARROSSEL E PAINEL)
+   7. RENDERIZAÇÃO DE TELA (CARROSSEL E PAINEL)
    ========================================================================== */
 function renderCarousel() {
+  if (!carouselTrack) return;
   carouselTrack.innerHTML = '';
   const top10 = recentArticles.filter(art => !readArticles.includes(art.id)).slice(0, 10);
 
@@ -265,7 +294,7 @@ function renderCarousel() {
     slide.innerHTML = `
       ${art.imageUrl ? `<img src="${art.imageUrl}" class="carousel-img" alt="Capa" loading="lazy">` : ''}
       <div class="carousel-body">
-        <span class="card-vip-tag" style="background:var(--accent-primary);">${art.categoryIcon} ${art.categoryName}</span>
+        <span class="card-vip-tag" style="background:var(--accent-primary);">${art.categoryIcon || '📰'} ${art.categoryName || 'Notícia'}</span>
         <a href="${art.link}" target="_blank" class="carousel-title">${art.title}</a>
         <div class="card-meta">
           <span>⏱️ ${art.readTime} min</span>
@@ -346,7 +375,7 @@ async function renderDashboard(searchTerm = '') {
     if (!catInfo) return;
 
     let articles = (loadedSectorsData[catKey] || []).filter(art => !readArticles.includes(art.id));
-    if (searchTerm) articles = articles.filter(a => a.title.toLowerCase().includes(searchTerm.toLowerCase()));
+    if (searchTerm) articles = articles.filter(a => a.title.toLowerCase().includes(searchTerm.toLowerCase()) || a.description.toLowerCase().includes(searchTerm.toLowerCase()));
 
     if (articles.length > 0) {
       renderedAny = true;
@@ -408,13 +437,13 @@ function createNewsCard(article, isVip) {
 }
 
 /* ==========================================================================
-   7. FEEDBACK E HÁBITOS (PAINEL DE ESTATÍSTICAS)
-   ========================================================================= */
+   8. FEEDBACK E HÁBITOS (PAINEL DE ESTATÍSTICAS)
+   ========================================================================== */
 function feedbackLike(article) {
   const words = article.title.split(' ').filter(w => w.length > 4);
   if (words.length > 0 && !userKeywords.includes(words[0])) {
     userKeywords.push(words[0]);
-    localStorage.setItem('meu_feed_keywords', JSON.stringify(userKeywords));
+    localStorage.setItem(STORAGE_PREFIX + 'meu_feed_keywords', JSON.stringify(userKeywords));
   }
   alert('👍🏻 Feedback registado!');
   loadAllSectors();
@@ -424,7 +453,7 @@ function feedbackDislike(article) {
   const snippet = article.title.split(' ').slice(0, 3).join(' ');
   if (!hiddenKeywords.includes(snippet)) {
     hiddenKeywords.push(snippet);
-    localStorage.setItem('meu_feed_hidden_keywords', JSON.stringify(hiddenKeywords));
+    localStorage.setItem(STORAGE_PREFIX + 'meu_feed_hidden_keywords', JSON.stringify(hiddenKeywords));
   }
   markAsRead(article.id);
   alert('👎🏻 Conteúdo semelhante ocultado.');
@@ -433,7 +462,7 @@ function feedbackDislike(article) {
 function markAsRead(articleId) {
   if (!readArticles.includes(articleId)) {
     readArticles.push(articleId);
-    localStorage.setItem('meu_feed_read', JSON.stringify(readArticles));
+    localStorage.setItem(STORAGE_PREFIX + 'meu_feed_read', JSON.stringify(readArticles));
   }
   const cards = document.querySelectorAll(`[data-article-id="${articleId}"]`);
   cards.forEach(card => {
@@ -450,7 +479,7 @@ function recordReadingHabit(article) {
     readTime: article.readTime
   });
   if (readingHistory.length > 50) readingHistory.pop();
-  localStorage.setItem('meu_feed_history', JSON.stringify(readingHistory));
+  localStorage.setItem(STORAGE_PREFIX + 'meu_feed_history', JSON.stringify(readingHistory));
 }
 
 function renderStatsPanel() {
@@ -491,7 +520,7 @@ function shareToWhatsApp(article) {
 }
 
 /* ==========================================================================
-   8. LEITURA LIMPA (READER VIEW)
+   9. LEITURA LIMPA (READER VIEW)
    ========================================================================== */
 function openReaderMode(article) {
   recordReadingHabit(article);
@@ -500,7 +529,7 @@ function openReaderMode(article) {
   const sentences = cleanDesc.split('. ').filter(s => s.trim().length > 10);
   const summaryPoints = sentences.slice(0, 2).map(s => `• ${s.trim()}${s.endsWith('.') ? '' : '.'}`).join('<br>');
 
-  let rawContent = article.content || article.description || '';
+  let rawContent = cleanArticleContent(article.content || article.description || '');
   if (!rawContent.includes('<p>') && !rawContent.includes('<br>')) {
     const paragraphs = rawContent.split('. ').filter(p => p.trim().length > 0);
     rawContent = paragraphs.map(p => `<p style="margin-bottom: 16px; line-height: 1.7; color: var(--text-primary);">${p.trim()}${p.endsWith('.') ? '' : '.'}</p>`).join('');
@@ -553,7 +582,7 @@ function toggleSave(article, buttonElement) {
     savedArticles.push(article);
     buttonElement.innerText = '🔖 Salvo';
   }
-  localStorage.setItem('meu_feed_saved', JSON.stringify(savedArticles));
+  localStorage.setItem(STORAGE_PREFIX + 'meu_feed_saved', JSON.stringify(savedArticles));
 }
 
 function renderSavedArticles() {
@@ -593,14 +622,14 @@ function parseKeywords(stringInput) {
 }
 
 /* ==========================================================================
-   9. EVENTOS DA INTERFACE
+   10. EVENTOS DA INTERFACE
    ========================================================================== */
 function setupEventListeners() {
   if (btnToggleOled) {
     btnToggleOled.addEventListener('click', () => {
       isOledMode = !isOledMode;
       document.body.classList.toggle('oled-mode', isOledMode);
-      localStorage.setItem('meu_feed_oled', isOledMode ? 'true' : 'false');
+      localStorage.setItem(STORAGE_PREFIX + 'meu_feed_oled', isOledMode ? 'true' : 'false');
     });
   }
 
@@ -612,9 +641,9 @@ function setupEventListeners() {
     const newCat = { name: name, icon: '🌐', url: url };
     customCategories[customKey] = newCat;
     CATEGORIES_DATABASE[customKey] = newCat;
-    localStorage.setItem('meu_feed_custom_sources', JSON.stringify(customCategories));
+    localStorage.setItem(STORAGE_PREFIX + 'meu_feed_custom_sources', JSON.stringify(customCategories));
     userCategories.push(customKey);
-    localStorage.setItem('meu_feed_categories', JSON.stringify(userCategories));
+    localStorage.setItem(STORAGE_PREFIX + 'meu_feed_categories', JSON.stringify(userCategories));
     customRssNameInput.value = '';
     customRssUrlInput.value = '';
     renderReorderSettings();
@@ -636,9 +665,9 @@ function setupEventListeners() {
       if (selectedCats.length === 0) return alert('Selecione pelo menos uma categoria.');
       userCategories = selectedCats;
       userKeywords = parseKeywords(onboardingKeywordsInput.value);
-      localStorage.setItem('meu_feed_categories', JSON.stringify(userCategories));
-      localStorage.setItem('meu_feed_keywords', JSON.stringify(userKeywords));
-      localStorage.setItem('meu_feed_installed', 'true');
+      localStorage.setItem(STORAGE_PREFIX + 'meu_feed_categories', JSON.stringify(userCategories));
+      localStorage.setItem(STORAGE_PREFIX + 'meu_feed_keywords', JSON.stringify(userKeywords));
+      localStorage.setItem(STORAGE_PREFIX + 'meu_feed_installed', 'true');
       onboardingScreen.classList.remove('active');
       loadAllSectors();
     });
@@ -693,8 +722,8 @@ function setupEventListeners() {
   if (btnSaveSettings) {
     btnSaveSettings.addEventListener('click', () => {
       userKeywords = parseKeywords(settingsKeywordsInput.value);
-      localStorage.setItem('meu_feed_categories', JSON.stringify(userCategories));
-      localStorage.setItem('meu_feed_keywords', JSON.stringify(userKeywords));
+      localStorage.setItem(STORAGE_PREFIX + 'meu_feed_categories', JSON.stringify(userCategories));
+      localStorage.setItem(STORAGE_PREFIX + 'meu_feed_keywords', JSON.stringify(userKeywords));
       settingsModal.classList.remove('active');
       currentView = 'feed';
       loadAllSectors();
