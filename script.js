@@ -1,5 +1,5 @@
 /* ==========================================================================
-   CONFIGURAÇÃO DE PERFIS E BASE DE FEEDS
+   1. CONFIGURAÇÃO DE PERFIS E BASE DE FEEDS
    ========================================================================== */
 const urlParams = new URLSearchParams(window.location.search);
 const isMaeProfile = urlParams.get('perfil') === 'mae';
@@ -94,9 +94,9 @@ document.addEventListener('DOMContentLoaded', () => {
       localStorage.setItem(STORAGE_PREFIX + 'meu_feed_installed', 'true');
       loadAllSectors();
     } else {
-      onboardingKeywordsInput.value = userKeywords.join(', ');
-      renderCategoryGrid(onboardingCategories, userCategories);
-      onboardingScreen.classList.add('active');
+      if (onboardingKeywordsInput) onboardingKeywordsInput.value = userKeywords.join(', ');
+      if (onboardingCategories) renderCategoryGrid(onboardingCategories, userCategories);
+      if (onboardingScreen) onboardingScreen.classList.add('active');
     }
   } else {
     loadAllSectors();
@@ -130,38 +130,44 @@ function cleanArticleContent(rawText) {
 }
 
 /* ==========================================================================
-   5. PROCESSAMENTO DOS FEEDS (48h)
+   5. PROCESSAMENTO DOS FEEDS (Com Fallback Seguro)
    ========================================================================== */
 async function loadAllSectors() {
+  if (!sectorsContainer) return;
+
   if (currentView === 'saved') {
-    document.querySelector('.carousel-section').style.display = 'none';
+    const carouselSec = document.querySelector('.carousel-section');
+    if (carouselSec) carouselSec.style.display = 'none';
     if (categoryFilterBar) categoryFilterBar.style.display = 'none';
     renderSavedArticles();
     return;
   }
   if (currentView === 'stats') {
-    document.querySelector('.carousel-section').style.display = 'none';
+    const carouselSec = document.querySelector('.carousel-section');
+    if (carouselSec) carouselSec.style.display = 'none';
     if (categoryFilterBar) categoryFilterBar.style.display = 'none';
     renderStatsPanel();
     return;
   }
 
-  document.querySelector('.carousel-section').style.display = 'block';
+  const carouselSec = document.querySelector('.carousel-section');
+  if (carouselSec) carouselSec.style.display = 'block';
   if (categoryFilterBar) categoryFilterBar.style.display = 'flex';
 
   sectorsContainer.innerHTML = '<p style="color:var(--text-secondary); grid-column: 1/-1; text-align:center; padding:40px;">Carregando últimas manchetes...</p>';
   
+  loadedSectorsData = {};
+  recentArticles = [];
+  const now = new Date();
+  const maxAgeMs = 48 * 60 * 60 * 1000;
+
   try {
+    // Tenta carregar do feed.json local
     const response = await fetch('./feed.json?t=' + Date.now());
+    if (!response.ok) throw new Error('feed.json não encontrado');
     const json = await response.json();
 
-    loadedSectorsData = {};
-    recentArticles = [];
-
-    const now = new Date();
-    const maxAgeMs = 48 * 60 * 60 * 1000;
-
-    Object.keys(json.data).forEach(catKey => {
+    Object.keys(json.data || {}).forEach(catKey => {
       const items = json.data[catKey] || [];
       const filtered = items.filter(art => {
         const articleId = btoa(unescape(encodeURIComponent(art.link)));
@@ -186,23 +192,78 @@ async function loadAllSectors() {
       });
     });
 
-    recentArticles.sort((a, b) => new Date(b.pubDate) - new Date(a.pubDate));
-
-    renderCategoryFilterBar();
-    renderCarousel();
-    renderDashboard();
-
   } catch (err) {
-    console.error('Erro ao carregar feed.json:', err);
-    sectorsContainer.innerHTML = '<p style="color:var(--text-secondary); grid-column: 1/-1; text-align:center; padding:40px;">Nenhuma notícia encontrada.</p>';
+    console.warn('feed.json indisponível, carregando via RSS direto...', err);
+    // FALLBACK: Se o feed.json falhar, busca direto dos RSS via proxy
+    for (const catKey of userCategories) {
+      const catInfo = CATEGORIES_DATABASE[catKey];
+      if (!catInfo || !catInfo.url) continue;
+
+      try {
+        const proxyUrl = `https://api.allorigins.win/get?url=${encodeURIComponent(catInfo.url)}`;
+        const res = await fetch(proxyUrl);
+        const data = await res.json();
+        if (!data || !data.contents) continue;
+
+        const parser = new DOMParser();
+        const xml = parser.parseFromString(data.contents, 'text/xml');
+        const items = xml.querySelectorAll('item');
+        const catArticles = [];
+
+        items.forEach(item => {
+          const title = item.querySelector('title')?.textContent || '';
+          const link = item.querySelector('link')?.textContent || '';
+          const pubDate = item.querySelector('pubDate')?.textContent || new Date();
+          const description = item.querySelector('description')?.textContent || '';
+          
+          let imageUrl = '';
+          const enclosure = item.querySelector('enclosure');
+          if (enclosure && enclosure.getAttribute('url')) {
+            imageUrl = enclosure.getAttribute('url');
+          } else {
+            const matchImg = description.match(/<img[^>]+src="([^">]+)"/);
+            if (matchImg && matchImg[1]) imageUrl = matchImg[1];
+          }
+
+          const articleId = btoa(unescape(encodeURIComponent(link)));
+          if (readArticles.includes(articleId)) return;
+
+          const art = {
+            id: articleId,
+            title,
+            link,
+            pubDate: new Date(pubDate),
+            description: cleanArticleContent(description),
+            content: cleanArticleContent(description),
+            category: catKey,
+            categoryName: catInfo.name,
+            categoryIcon: catInfo.icon,
+            imageUrl,
+            readTime: calculateReadTime(title + ' ' + description)
+          };
+
+          catArticles.push(art);
+          if (!recentArticles.some(a => a.id === art.id)) recentArticles.push(art);
+        });
+
+        loadedSectorsData[catKey] = catArticles;
+      } catch (e) {
+        console.error(`Erro ao carregar RSS de ${catKey}:`, e);
+      }
+    }
   }
+
+  recentArticles.sort((a, b) => new Date(b.pubDate) - new Date(a.pubDate));
+
+  renderCategoryFilterBar();
+  renderCarousel();
+  renderDashboard();
 }
 
 /* ==========================================================================
    6. BARRA DE FILTROS (TOPO + MENU LATERAL MOBILE)
    ========================================================================== */
 function renderCategoryFilterBar() {
-  // 1. Renderiza no topo (para Desktop)
   if (categoryFilterBar) {
     categoryFilterBar.innerHTML = '';
 
@@ -212,7 +273,7 @@ function renderCategoryFilterBar() {
     allBtn.addEventListener('click', () => {
       activeCategoryFilter = 'all';
       renderCategoryFilterBar();
-      renderDashboard(searchInput.value);
+      renderDashboard(searchInput ? searchInput.value : '');
     });
     categoryFilterBar.appendChild(allBtn);
 
@@ -226,13 +287,12 @@ function renderCategoryFilterBar() {
       btn.addEventListener('click', () => {
         activeCategoryFilter = catKey;
         renderCategoryFilterBar();
-        renderDashboard(searchInput.value);
+        renderDashboard(searchInput ? searchInput.value : '');
       });
       categoryFilterBar.appendChild(btn);
     });
   }
 
-  // 2. Renderiza dentro do Menu Lateral (Perfeito para Mobile / iPhone)
   const sidebarCatContainer = document.getElementById('sidebar-categories-container');
   if (sidebarCatContainer) {
     sidebarCatContainer.innerHTML = '';
@@ -243,7 +303,7 @@ function renderCategoryFilterBar() {
     allSidebarBtn.addEventListener('click', () => {
       activeCategoryFilter = 'all';
       renderCategoryFilterBar();
-      renderDashboard(searchInput.value);
+      renderDashboard(searchInput ? searchInput.value : '');
       closeSidebarMenu();
     });
     sidebarCatContainer.appendChild(allSidebarBtn);
@@ -258,7 +318,7 @@ function renderCategoryFilterBar() {
       btn.addEventListener('click', () => {
         activeCategoryFilter = catKey;
         renderCategoryFilterBar();
-        renderDashboard(searchInput.value);
+        renderDashboard(searchInput ? searchInput.value : '');
         closeSidebarMenu();
       });
       sidebarCatContainer.appendChild(btn);
@@ -267,10 +327,8 @@ function renderCategoryFilterBar() {
 }
 
 function closeSidebarMenu() {
-  const sidebar = document.getElementById('sidebar');
-  const sidebarOverlay = document.getElementById('sidebar-overlay');
-  if (sidebar) sidebar.classList.remove('active');
-  if (sidebarOverlay) sidebarOverlay.classList.remove('active');
+  sidebar?.classList.remove('active');
+  sidebarOverlay?.classList.remove('active');
 } 
 
 /* ==========================================================================
@@ -281,10 +339,12 @@ function renderCarousel() {
   carouselTrack.innerHTML = '';
   const top10 = recentArticles.filter(art => !readArticles.includes(art.id)).slice(0, 10);
 
+  const carouselSec = document.querySelector('.carousel-section');
   if (top10.length === 0) {
-    document.querySelector('.carousel-section').style.display = 'none';
+    if (carouselSec) carouselSec.style.display = 'none';
     return;
   }
+  if (carouselSec) carouselSec.style.display = 'block';
 
   top10.forEach(art => {
     const slide = document.createElement('div');
@@ -313,20 +373,22 @@ function renderCarousel() {
 }
 
 async function renderDashboard(searchTerm = '') {
+  if (!sectorsContainer) return;
   sectorsContainer.innerHTML = '';
   const filterByCat = activeCategoryFilter !== 'all' ? activeCategoryFilter : null;
 
+  const carouselSec = document.querySelector('.carousel-section');
   if (filterByCat) {
-    document.querySelector('.carousel-section').style.display = 'none';
+    if (carouselSec) carouselSec.style.display = 'none';
   } else {
-    document.querySelector('.carousel-section').style.display = 'block';
+    if (carouselSec) carouselSec.style.display = 'block';
 
     if (!searchTerm) {
       const vipByKeyword = {};
       userKeywords.forEach(kw => { vipByKeyword[kw.toLowerCase()] = []; });
 
       Object.keys(loadedSectorsData).forEach(catKey => {
-        loadedSectorsData[catKey].forEach(article => {
+        (loadedSectorsData[catKey] || []).forEach(article => {
           if (readArticles.includes(article.id)) return;
           userKeywords.forEach(kw => {
             const kLower = kw.toLowerCase();
@@ -483,6 +545,7 @@ function recordReadingHabit(article) {
 }
 
 function renderStatsPanel() {
+  if (!sectorsContainer) return;
   sectorsContainer.innerHTML = '';
   const sector = document.createElement('section');
   sector.className = 'sector-block';
@@ -537,40 +600,42 @@ function openReaderMode(article) {
     rawContent = rawContent.replace(/<p>/g, '<p style="margin-bottom: 16px; line-height: 1.7; color: var(--text-primary);">');
   }
 
-  readerBody.innerHTML = `
-    ${article.imageUrl ? `<div class="reader-img-container"><img src="${article.imageUrl}" alt="Imagem" style="width:100%; border-radius:12px; margin-bottom:16px; object-fit:cover; max-height:350px;"></div>` : ''}
-    <h2 style="font-size: 1.4rem; margin-bottom: 12px; line-height: 1.35; color: var(--text-primary); font-weight:700;">${article.title}</h2>
-    <p style="color: var(--text-secondary); font-size: 0.85rem; margin-bottom: 20px;">
-      Publicado em ${formatDate(article.pubDate)} • Tempo de leitura: ${article.readTime} min
-    </p>
-
-    <div style="background: rgba(37, 99, 235, 0.1); border-left: 4px solid var(--accent-primary); padding: 14px 18px; border-radius: 8px; margin-bottom: 24px;">
-      <strong style="color: var(--accent-hover); display: block; margin-bottom: 6px;">📌 Resumo dos Pontos Principais:</strong>
-      <p style="font-size: 0.95rem; line-height: 1.6; color: #e2e8f0; margin: 0;">
-        ${summaryPoints || 'Confira a matéria completa no link abaixo.'}
+  if (readerBody) {
+    readerBody.innerHTML = `
+      ${article.imageUrl ? `<div class="reader-img-container"><img src="${article.imageUrl}" alt="Imagem" style="width:100%; border-radius:12px; margin-bottom:16px; object-fit:cover; max-height:350px;"></div>` : ''}
+      <h2 style="font-size: 1.4rem; margin-bottom: 12px; line-height: 1.35; color: var(--text-primary); font-weight:700;">${article.title}</h2>
+      <p style="color: var(--text-secondary); font-size: 0.85rem; margin-bottom: 20px;">
+        Publicado em ${formatDate(article.pubDate)} • Tempo de leitura: ${article.readTime} min
       </p>
-    </div>
 
-    <div class="reader-text-body" style="font-size: 1.05rem;">
-      ${rawContent}
-    </div>
+      <div style="background: rgba(37, 99, 235, 0.1); border-left: 4px solid var(--accent-primary); padding: 14px 18px; border-radius: 8px; margin-bottom: 24px;">
+        <strong style="color: var(--accent-hover); display: block; margin-bottom: 6px;">📌 Resumo dos Pontos Principais:</strong>
+        <p style="font-size: 0.95rem; line-height: 1.6; color: #e2e8f0; margin: 0;">
+          ${summaryPoints || 'Confira a matéria completa no link abaixo.'}
+        </p>
+      </div>
 
-    <div style="display: flex; gap: 10px; margin-top: 24px;">
-      <button id="btn-read-modal-hide" class="primary-btn" style="background: var(--surface-hover); border: 1px solid var(--card-border);">
-        👁️ Marcar como Lido e Fechar
-      </button>
-      <a href="${article.link}" target="_blank" class="primary-btn" style="text-align:center; text-decoration:none;">
-        Abrir original ↗
-      </a>
-    </div>
-  `;
+      <div class="reader-text-body" style="font-size: 1.05rem;">
+        ${rawContent}
+      </div>
 
-  document.getElementById('btn-read-modal-hide').addEventListener('click', () => {
-    markAsRead(article.id);
-    readerModal.classList.remove('active');
-  });
+      <div style="display: flex; gap: 10px; margin-top: 24px;">
+        <button id="btn-read-modal-hide" class="primary-btn" style="background: var(--surface-hover); border: 1px solid var(--card-border);">
+          👁️ Marcar como Lido e Fechar
+        </button>
+        <a href="${article.link}" target="_blank" class="primary-btn" style="text-align:center; text-decoration:none;">
+          Abrir original ↗
+        </a>
+      </div>
+    `;
 
-  readerModal.classList.add('active');
+    document.getElementById('btn-read-modal-hide')?.addEventListener('click', () => {
+      markAsRead(article.id);
+      readerModal?.classList.remove('active');
+    });
+  }
+
+  readerModal?.classList.add('active');
 }
 
 function toggleSave(article, buttonElement) {
@@ -586,6 +651,7 @@ function toggleSave(article, buttonElement) {
 }
 
 function renderSavedArticles() {
+  if (!sectorsContainer) return;
   sectorsContainer.innerHTML = '';
   const sector = document.createElement('section');
   sector.className = 'sector-block';
@@ -634,8 +700,8 @@ function setupEventListeners() {
   }
 
   if (btnAddCustomRss) btnAddCustomRss.addEventListener('click', () => {
-    const name = customRssNameInput.value.trim();
-    const url = customRssUrlInput.value.trim();
+    const name = customRssNameInput?.value.trim();
+    const url = customRssUrlInput?.value.trim();
     if (!name || !url) return alert('Preencha Nome e URL.');
     const customKey = `custom_${Date.now()}`;
     const newCat = { name: name, icon: '🌐', url: url };
@@ -644,8 +710,8 @@ function setupEventListeners() {
     localStorage.setItem(STORAGE_PREFIX + 'meu_feed_custom_sources', JSON.stringify(customCategories));
     userCategories.push(customKey);
     localStorage.setItem(STORAGE_PREFIX + 'meu_feed_categories', JSON.stringify(userCategories));
-    customRssNameInput.value = '';
-    customRssUrlInput.value = '';
+    if (customRssNameInput) customRssNameInput.value = '';
+    if (customRssUrlInput) customRssUrlInput.value = '';
     renderReorderSettings();
     alert(`Fonte "${name}" adicionada!`);
   });
@@ -661,20 +727,20 @@ function setupEventListeners() {
 
   if (btnFinishOnboarding) {
     btnFinishOnboarding.addEventListener('click', () => {
-      const selectedCats = Array.from(onboardingCategories.querySelectorAll('input[type="checkbox"]:checked')).map(cb => cb.value);
+      const selectedCats = Array.from(onboardingCategories?.querySelectorAll('input[type="checkbox"]:checked') || []).map(cb => cb.value);
       if (selectedCats.length === 0) return alert('Selecione pelo menos uma categoria.');
       userCategories = selectedCats;
-      userKeywords = parseKeywords(onboardingKeywordsInput.value);
+      userKeywords = parseKeywords(onboardingKeywordsInput?.value || '');
       localStorage.setItem(STORAGE_PREFIX + 'meu_feed_categories', JSON.stringify(userCategories));
       localStorage.setItem(STORAGE_PREFIX + 'meu_feed_keywords', JSON.stringify(userKeywords));
       localStorage.setItem(STORAGE_PREFIX + 'meu_feed_installed', 'true');
-      onboardingScreen.classList.remove('active');
+      onboardingScreen?.classList.remove('active');
       loadAllSectors();
     });
   }
 
-  if (btnCarouselPrev) btnCarouselPrev.addEventListener('click', () => carouselTrack.scrollBy({ left: -350, behavior: 'smooth' }));
-  if (btnCarouselNext) btnCarouselNext.addEventListener('click', () => carouselTrack.scrollBy({ left: 350, behavior: 'smooth' }));
+  if (btnCarouselPrev && carouselTrack) btnCarouselPrev.addEventListener('click', () => carouselTrack.scrollBy({ left: -350, behavior: 'smooth' }));
+  if (btnCarouselNext && carouselTrack) btnCarouselNext.addEventListener('click', () => carouselTrack.scrollBy({ left: 350, behavior: 'smooth' }));
 
   if (searchInput) {
     searchInput.addEventListener('input', (e) => {
@@ -685,14 +751,14 @@ function setupEventListeners() {
   if (btnRefresh) btnRefresh.addEventListener('click', loadAllSectors);
 
   const closeMenu = () => {
-    sidebar.classList.remove('active');
-    sidebarOverlay.classList.remove('active');
+    sidebar?.classList.remove('active');
+    sidebarOverlay?.classList.remove('active');
   };
 
   if (btnOpenMenu) {
     btnOpenMenu.addEventListener('click', () => {
-      sidebar.classList.add('active');
-      sidebarOverlay.classList.add('active');
+      sidebar?.classList.add('active');
+      sidebarOverlay?.classList.add('active');
     });
   }
 
@@ -708,9 +774,9 @@ function setupEventListeners() {
       closeMenu();
 
       if (view === 'settings') {
-        settingsKeywordsInput.value = userKeywords.join(', ');
+        if (settingsKeywordsInput) settingsKeywordsInput.value = userKeywords.join(', ');
         renderReorderSettings();
-        settingsModal.classList.add('active');
+        settingsModal?.classList.add('active');
       } else {
         currentView = view;
         activeCategoryFilter = 'all';
@@ -721,17 +787,17 @@ function setupEventListeners() {
 
   if (btnSaveSettings) {
     btnSaveSettings.addEventListener('click', () => {
-      userKeywords = parseKeywords(settingsKeywordsInput.value);
+      userKeywords = parseKeywords(settingsKeywordsInput?.value || '');
       localStorage.setItem(STORAGE_PREFIX + 'meu_feed_categories', JSON.stringify(userCategories));
       localStorage.setItem(STORAGE_PREFIX + 'meu_feed_keywords', JSON.stringify(userKeywords));
-      settingsModal.classList.remove('active');
+      settingsModal?.classList.remove('active');
       currentView = 'feed';
       loadAllSectors();
     });
   }
 
-  if (btnCloseSettings) btnCloseSettings.addEventListener('click', () => settingsModal.classList.remove('active'));
-  if (btnCloseReader) btnCloseReader.addEventListener('click', () => readerModal.classList.remove('active'));
+  if (btnCloseSettings) btnCloseSettings.addEventListener('click', () => settingsModal?.classList.remove('active'));
+  if (btnCloseReader) btnCloseReader.addEventListener('click', () => readerModal?.classList.remove('active'));
 
   document.querySelectorAll('.overlay-screen').forEach(overlay => {
     overlay.addEventListener('click', (e) => {
