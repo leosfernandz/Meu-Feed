@@ -1,5 +1,5 @@
 /* ==========================================================================
-   CONFIGURAÇÃO DE PERFIS E BASE DE FEEDS (Direto dos RSS)
+   1. CONFIGURAÇÃO DE PERFIS E BASE DE FEEDS
    ========================================================================== */
 const urlParams = new URLSearchParams(window.location.search);
 const isMaeProfile = urlParams.get('perfil') === 'mae';
@@ -21,7 +21,7 @@ let CATEGORIES_DATABASE = { ...DEFAULT_CATEGORIES, ...customCategories };
 let userCategories = JSON.parse(localStorage.getItem(STORAGE_PREFIX + 'meu_feed_categories')) || [];
 if (userCategories.length === 0) {
   if (isMaeProfile) {
-    userCategories = ['politica_br', 'politica_int', 'economia'];
+    userCategories = ['politica_br', 'politica_int', 'economia', 'saude'];
   } else {
     Object.keys(DEFAULT_CATEGORIES).forEach(key => {
       if (!userCategories.includes(key)) userCategories.push(key);
@@ -43,7 +43,7 @@ let currentView = 'feed';
 let activeCategoryFilter = 'all';
 
 /* ==========================================================================
-   ELEMENTOS DA INTERFACE (DOM)
+   2. ELEMENTOS DA INTERFACE (DOM)
    ========================================================================== */
 const onboardingScreen         = document.getElementById('onboarding-screen');
 const onboardingCategories     = document.getElementById('onboarding-categories');
@@ -82,7 +82,7 @@ const readerBody               = document.getElementById('reader-body');
 const btnCloseReader           = document.getElementById('btn-close-reader');
 
 /* ==========================================================================
-   INICIALIZAÇÃO
+   3. INICIALIZAÇÃO
    ========================================================================== */
 document.addEventListener('DOMContentLoaded', () => {
   setupEventListeners();
@@ -117,7 +117,7 @@ function renderCategoryGrid(container, selectedKeys) {
 }
 
 /* ==========================================================================
-   LIMPEZA INTELIGENTE DE TEXTO (Remove legendas e créditos)
+   4. FUNÇÃO DE LIMPEZA DE TEXTO (LEGENDAS E CRÉDITOS)
    ========================================================================== */
 function cleanArticleContent(rawText) {
   if (!rawText) return '';
@@ -130,7 +130,7 @@ function cleanArticleContent(rawText) {
 }
 
 /* ==========================================================================
-   CARREGAMENTO DIRETO DOS RSS (Sem depender de feed.json)
+   5. PROCESSAMENTO DOS FEEDS (VIA FEED.JSON COM LIMITE EXPANDIDO)
    ========================================================================== */
 async function loadAllSectors() {
   if (!sectorsContainer) return;
@@ -154,68 +154,51 @@ async function loadAllSectors() {
   if (carouselSec) carouselSec.style.display = 'block';
   if (categoryFilterBar) categoryFilterBar.style.display = 'flex';
 
-  sectorsContainer.innerHTML = '<p style="color:var(--text-secondary); grid-column: 1/-1; text-align:center; padding:40px;">Carregando manchetes em tempo real...</p>';
+  sectorsContainer.innerHTML = '<p style="color:var(--text-secondary); grid-column: 1/-1; text-align:center; padding:40px;">Carregando últimas manchetes...</p>';
   
   loadedSectorsData = {};
   recentArticles = [];
+  const now = new Date();
+  const maxAgeMs = 30 * 24 * 60 * 60 * 1000; // 30 dias de validade para evitar itens ocultos
 
-  for (const catKey of userCategories) {
-    const catInfo = CATEGORIES_DATABASE[catKey];
-    if (!catInfo || !catInfo.url) continue;
+  try {
+    const response = await fetch('./feed.json?t=' + Date.now());
+    if (!response.ok) throw new Error('feed.json não encontrado');
+    const json = await response.json();
 
-    try {
-      const proxyUrl = `https://api.allorigins.win/get?url=${encodeURIComponent(catInfo.url)}`;
-      const res = await fetch(proxyUrl);
-      const data = await res.json();
-      if (!data || !data.contents) continue;
+    Object.keys(json.data || {}).forEach(catKey => {
+      const items = json.data[catKey] || [];
+      const catInfo = CATEGORIES_DATABASE[catKey] || { name: 'Portal', icon: '📰' };
 
-      const parser = new DOMParser();
-      const xml = parser.parseFromString(data.contents, 'text/xml');
-      const items = xml.querySelectorAll('item');
-      const catArticles = [];
-
-      items.forEach(item => {
-        const title = item.querySelector('title')?.textContent || '';
-        const link = item.querySelector('link')?.textContent || '';
-        const pubDate = item.querySelector('pubDate')?.textContent || new Date();
-        const description = item.querySelector('description')?.textContent || '';
+      const filtered = items.filter(art => {
+        const articleId = btoa(unescape(encodeURIComponent(art.link)));
+        if (readArticles.includes(articleId)) return false;
         
-        let imageUrl = '';
-        const enclosure = item.querySelector('enclosure');
-        if (enclosure && enclosure.getAttribute('url')) {
-          imageUrl = enclosure.getAttribute('url');
-        } else {
-          const matchImg = description.match(/<img[^>]+src="([^">]+)"/);
-          if (matchImg && matchImg[1]) imageUrl = matchImg[1];
-        }
+        const fullText = (art.title + ' ' + (art.description || '')).toLowerCase();
+        if (hiddenKeywords.some(kw => fullText.includes(kw.toLowerCase()))) return false;
 
-        const articleId = btoa(unescape(encodeURIComponent(link)));
-        if (readArticles.includes(articleId)) return;
+        if (!art.pubDate) return true;
+        return (now - new Date(art.pubDate)) <= maxAgeMs;
+      }).map(art => ({
+        ...art,
+        id: btoa(unescape(encodeURIComponent(art.link))),
+        description: cleanArticleContent(art.description || ''),
+        content: cleanArticleContent(art.content || art.description || ''),
+        sourceName: catInfo.name, // Nome do portal para exibir no card
+        categoryIcon: catInfo.icon,
+        readTime: calculateReadTime(art.title + ' ' + (art.description || ''))
+      }));
 
-        const fullText = (title + ' ' + description).toLowerCase();
-        if (hiddenKeywords.some(kw => fullText.includes(kw.toLowerCase()))) return;
-
-        const art = {
-          id: articleId,
-          title,
-          link,
-          pubDate: new Date(pubDate),
-          description: cleanArticleContent(description),
-          content: cleanArticleContent(description),
-          category: catKey,
-          sourceName: catInfo.name, // Nome do portal visível no card
-          imageUrl,
-          readTime: calculateReadTime(title + ' ' + description)
-        };
-
-        catArticles.push(art);
+      loadedSectorsData[catKey] = filtered;
+      filtered.forEach(art => {
         if (!recentArticles.some(a => a.id === art.id)) recentArticles.push(art);
       });
+    });
 
-      loadedSectorsData[catKey] = catArticles;
-    } catch (e) {
-      console.error(`Erro ao carregar RSS de ${catKey}:`, e);
-    }
+  } catch (err) {
+    console.error('Erro ao carregar feed.json:', err);
+    sectorsContainer.innerHTML = '<p style="color:var(--text-secondary); grid-column: 1/-1; text-align:center; padding:40px;">Erro ao carregar o feed de notícias.</p>';
+    return;
   }
 
   recentArticles.sort((a, b) => new Date(b.pubDate) - new Date(a.pubDate));
@@ -226,7 +209,7 @@ async function loadAllSectors() {
 }
 
 /* ==========================================================================
-   BARRA DE FILTROS (TOPO + MENU LATERAL MOBILE)
+   6. BARRA DE FILTROS (TOPO + MENU LATERAL MOBILE)
    ========================================================================== */
 function renderCategoryFilterBar() {
   if (categoryFilterBar) {
@@ -297,7 +280,7 @@ function closeSidebarMenu() {
 } 
 
 /* ==========================================================================
-   RENDERIZAÇÃO DE TELA (CARROSSEL E PAINEL COM FONTE NOS CARDS)
+   7. RENDERIZAÇÃO DE TELA (CARROSSEL E PAINEL)
    ========================================================================== */
 function renderCarousel() {
   if (!carouselTrack) return;
@@ -319,7 +302,7 @@ function renderCarousel() {
     slide.innerHTML = `
       ${art.imageUrl ? `<img src="${art.imageUrl}" class="carousel-img" alt="Capa" loading="lazy">` : ''}
       <div class="carousel-body">
-        <span class="card-vip-tag" style="background:var(--accent-primary);">${CATEGORIES_DATABASE[art.category]?.icon || '📰'} ${art.sourceName || 'Notícia'}</span>
+        <span class="card-vip-tag" style="background:var(--accent-primary);">${art.categoryIcon || '📰'} ${art.sourceName || 'Notícia'}</span>
         <a href="${art.link}" target="_blank" class="carousel-title">${art.title}</a>
         <div class="card-meta">
           <span>⏱️ ${art.readTime} min</span>
@@ -464,7 +447,7 @@ function createNewsCard(article, isVip) {
 }
 
 /* ==========================================================================
-   FEEDBACK E HÁBITOS
+   8. FEEDBACK E HÁBITOS
    ========================================================================== */
 function feedbackLike(article) {
   const words = article.title.split(' ').filter(w => w.length > 4);
@@ -548,7 +531,7 @@ function shareToWhatsApp(article) {
 }
 
 /* ==========================================================================
-   LEITURA LIMPA (READER VIEW)
+   9. LEITURA LIMPA (READER VIEW)
    ========================================================================== */
 function openReaderMode(article) {
   recordReadingHabit(article);
@@ -653,7 +636,7 @@ function parseKeywords(stringInput) {
 }
 
 /* ==========================================================================
-   EVENTOS DA INTERFACE
+   10. EVENTOS DA INTERFACE
    ========================================================================== */
 function setupEventListeners() {
   if (btnToggleOled) {
