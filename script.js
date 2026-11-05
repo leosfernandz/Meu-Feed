@@ -160,7 +160,7 @@ async function loadAllSectors() {
   loadedSectorsData = {};
   recentArticles = [];
   const now = new Date();
-  const maxAgeMs = 48 * 60 * 60 * 1000;
+  const maxAgeMs = 30 * 24 * 60 * 60 * 1000;
 
   try {
     console.log("Tentando carregar via ./feed.json...");
