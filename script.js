@@ -1,5 +1,5 @@
 /* ==========================================================================
-   1. CONFIGURAÇÃO DE PERFIS E BASE DE FEEDS
+   CONFIGURAÇÃO DE PERFIS E BASE DE FEEDS (Direto dos RSS)
    ========================================================================== */
 const urlParams = new URLSearchParams(window.location.search);
 const isMaeProfile = urlParams.get('perfil') === 'mae';
@@ -43,7 +43,7 @@ let currentView = 'feed';
 let activeCategoryFilter = 'all';
 
 /* ==========================================================================
-   2. ELEMENTOS DA INTERFACE (DOM)
+   ELEMENTOS DA INTERFACE (DOM)
    ========================================================================== */
 const onboardingScreen         = document.getElementById('onboarding-screen');
 const onboardingCategories     = document.getElementById('onboarding-categories');
@@ -82,7 +82,7 @@ const readerBody               = document.getElementById('reader-body');
 const btnCloseReader           = document.getElementById('btn-close-reader');
 
 /* ==========================================================================
-   3. INICIALIZAÇÃO
+   INICIALIZAÇÃO
    ========================================================================== */
 document.addEventListener('DOMContentLoaded', () => {
   setupEventListeners();
@@ -117,7 +117,7 @@ function renderCategoryGrid(container, selectedKeys) {
 }
 
 /* ==========================================================================
-   4. FUNÇÃO DE LIMPEZA DE TEXTO (LEGENDAS E CRÉDITOS)
+   LIMPEZA INTELIGENTE DE TEXTO (Remove legendas e créditos)
    ========================================================================== */
 function cleanArticleContent(rawText) {
   if (!rawText) return '';
@@ -130,10 +130,9 @@ function cleanArticleContent(rawText) {
 }
 
 /* ==========================================================================
-   5. PROCESSAMENTO DOS FEEDS (Com Fallback Seguro)
+   CARREGAMENTO DIRETO DOS RSS (Sem depender de feed.json)
    ========================================================================== */
 async function loadAllSectors() {
-  console.log("🚀 A iniciar o carregamento dos feeds...");
   if (!sectorsContainer) return;
 
   if (currentView === 'saved') {
@@ -155,112 +154,70 @@ async function loadAllSectors() {
   if (carouselSec) carouselSec.style.display = 'block';
   if (categoryFilterBar) categoryFilterBar.style.display = 'flex';
 
-  sectorsContainer.innerHTML = '<p style="color:var(--text-secondary); grid-column: 1/-1; text-align:center; padding:40px;">Carregando últimas manchetes...</p>';
+  sectorsContainer.innerHTML = '<p style="color:var(--text-secondary); grid-column: 1/-1; text-align:center; padding:40px;">Carregando manchetes em tempo real...</p>';
   
   loadedSectorsData = {};
   recentArticles = [];
-  const now = new Date();
-  const maxAgeMs = 30 * 24 * 60 * 60 * 1000;
 
-  try {
-    console.log("Tentando carregar via ./feed.json...");
-    const response = await fetch('./feed.json?t=' + Date.now());
-    if (!response.ok) throw new Error('feed.json não encontrado (Status ' + response.status + ')');
-    const json = await response.json();
-    console.log("✅ feed.json carregado com sucesso:", json);
+  for (const catKey of userCategories) {
+    const catInfo = CATEGORIES_DATABASE[catKey];
+    if (!catInfo || !catInfo.url) continue;
 
-    Object.keys(json.data || {}).forEach(catKey => {
-      const items = json.data[catKey] || [];
-      const filtered = items.filter(art => {
-        const articleId = btoa(unescape(encodeURIComponent(art.link)));
-        if (readArticles.includes(articleId)) return false;
+    try {
+      const proxyUrl = `https://api.allorigins.win/get?url=${encodeURIComponent(catInfo.url)}`;
+      const res = await fetch(proxyUrl);
+      const data = await res.json();
+      if (!data || !data.contents) continue;
+
+      const parser = new DOMParser();
+      const xml = parser.parseFromString(data.contents, 'text/xml');
+      const items = xml.querySelectorAll('item');
+      const catArticles = [];
+
+      items.forEach(item => {
+        const title = item.querySelector('title')?.textContent || '';
+        const link = item.querySelector('link')?.textContent || '';
+        const pubDate = item.querySelector('pubDate')?.textContent || new Date();
+        const description = item.querySelector('description')?.textContent || '';
         
-        const fullText = (art.title + ' ' + (art.description || '')).toLowerCase();
-        if (hiddenKeywords.some(kw => fullText.includes(kw.toLowerCase()))) return false;
-
-        if (!art.pubDate) return true;
-        return (now - new Date(art.pubDate)) <= maxAgeMs;
-      }).map(art => ({
-        ...art,
-        id: btoa(unescape(encodeURIComponent(art.link))),
-        description: cleanArticleContent(art.description || ''),
-        content: cleanArticleContent(art.content || art.description || ''),
-        readTime: calculateReadTime(art.title + ' ' + (art.description || ''))
-      }));
-
-      loadedSectorsData[catKey] = filtered;
-      filtered.forEach(art => {
-        if (!recentArticles.some(a => a.id === art.id)) recentArticles.push(art);
-      });
-    });
-
-  } catch (err) {
-    console.warn('⚠️ feed.json indisponível. A tentar carregar via RSS direto...', err);
-    
-    for (const catKey of userCategories) {
-      const catInfo = CATEGORIES_DATABASE[catKey];
-      if (!catInfo || !catInfo.url) continue;
-
-      try {
-        console.log(`A descarregar RSS para ${catKey}: ${catInfo.url}`);
-        const proxyUrl = `https://api.allorigins.win/get?url=${encodeURIComponent(catInfo.url)}`;
-        const res = await fetch(proxyUrl);
-        const data = await res.json();
-        if (!data || !data.contents) {
-          console.warn(`⚠️ Sem conteúdo para ${catKey}`);
-          continue;
+        let imageUrl = '';
+        const enclosure = item.querySelector('enclosure');
+        if (enclosure && enclosure.getAttribute('url')) {
+          imageUrl = enclosure.getAttribute('url');
+        } else {
+          const matchImg = description.match(/<img[^>]+src="([^">]+)"/);
+          if (matchImg && matchImg[1]) imageUrl = matchImg[1];
         }
 
-        const parser = new DOMParser();
-        const xml = parser.parseFromString(data.contents, 'text/xml');
-        const items = xml.querySelectorAll('item');
-        console.log(`📄 Encontrados ${items.length} itens no RSS de ${catKey}`);
-        const catArticles = [];
+        const articleId = btoa(unescape(encodeURIComponent(link)));
+        if (readArticles.includes(articleId)) return;
 
-        items.forEach(item => {
-          const title = item.querySelector('title')?.textContent || '';
-          const link = item.querySelector('link')?.textContent || '';
-          const pubDate = item.querySelector('pubDate')?.textContent || new Date();
-          const description = item.querySelector('description')?.textContent || '';
-          
-          let imageUrl = '';
-          const enclosure = item.querySelector('enclosure');
-          if (enclosure && enclosure.getAttribute('url')) {
-            imageUrl = enclosure.getAttribute('url');
-          } else {
-            const matchImg = description.match(/<img[^>]+src="([^">]+)"/);
-            if (matchImg && matchImg[1]) imageUrl = matchImg[1];
-          }
+        const fullText = (title + ' ' + description).toLowerCase();
+        if (hiddenKeywords.some(kw => fullText.includes(kw.toLowerCase()))) return;
 
-          const articleId = btoa(unescape(encodeURIComponent(link)));
-          if (readArticles.includes(articleId)) return;
+        const art = {
+          id: articleId,
+          title,
+          link,
+          pubDate: new Date(pubDate),
+          description: cleanArticleContent(description),
+          content: cleanArticleContent(description),
+          category: catKey,
+          sourceName: catInfo.name, // Nome do portal visível no card
+          imageUrl,
+          readTime: calculateReadTime(title + ' ' + description)
+        };
 
-          const art = {
-            id: articleId,
-            title,
-            link,
-            pubDate: new Date(pubDate),
-            description: cleanArticleContent(description),
-            content: cleanArticleContent(description),
-            category: catKey,
-            categoryName: catInfo.name,
-            categoryIcon: catInfo.icon,
-            imageUrl,
-            readTime: calculateReadTime(title + ' ' + description)
-          };
+        catArticles.push(art);
+        if (!recentArticles.some(a => a.id === art.id)) recentArticles.push(art);
+      });
 
-          catArticles.push(art);
-          if (!recentArticles.some(a => a.id === art.id)) recentArticles.push(art);
-        });
-
-        loadedSectorsData[catKey] = catArticles;
-      } catch (e) {
-        console.error(`❌ Erro crítico ao carregar RSS de ${catKey}:`, e);
-      }
+      loadedSectorsData[catKey] = catArticles;
+    } catch (e) {
+      console.error(`Erro ao carregar RSS de ${catKey}:`, e);
     }
   }
 
-  console.log("📊 Total de artigos recentes recolhidos:", recentArticles.length);
   recentArticles.sort((a, b) => new Date(b.pubDate) - new Date(a.pubDate));
 
   renderCategoryFilterBar();
@@ -269,7 +226,7 @@ async function loadAllSectors() {
 }
 
 /* ==========================================================================
-   6. BARRA DE FILTROS (TOPO + MENU LATERAL MOBILE)
+   BARRA DE FILTROS (TOPO + MENU LATERAL MOBILE)
    ========================================================================== */
 function renderCategoryFilterBar() {
   if (categoryFilterBar) {
@@ -340,7 +297,7 @@ function closeSidebarMenu() {
 } 
 
 /* ==========================================================================
-   7. RENDERIZAÇÃO DE TELA (CARROSSEL E PAINEL)
+   RENDERIZAÇÃO DE TELA (CARROSSEL E PAINEL COM FONTE NOS CARDS)
    ========================================================================== */
 function renderCarousel() {
   if (!carouselTrack) return;
@@ -362,7 +319,7 @@ function renderCarousel() {
     slide.innerHTML = `
       ${art.imageUrl ? `<img src="${art.imageUrl}" class="carousel-img" alt="Capa" loading="lazy">` : ''}
       <div class="carousel-body">
-        <span class="card-vip-tag" style="background:var(--accent-primary);">${art.categoryIcon || '📰'} ${art.categoryName || 'Notícia'}</span>
+        <span class="card-vip-tag" style="background:var(--accent-primary);">${CATEGORIES_DATABASE[art.category]?.icon || '📰'} ${art.sourceName || 'Notícia'}</span>
         <a href="${art.link}" target="_blank" class="carousel-title">${art.title}</a>
         <div class="card-meta">
           <span>⏱️ ${art.readTime} min</span>
@@ -481,11 +438,11 @@ function createNewsCard(article, isVip) {
     <div class="card-body">
       ${isVip ? `<span class="card-vip-tag">🔴 Destaque</span>` : ''}
       <a href="${article.link}" target="_blank" class="card-title">${article.title}</a>
-      <div class="card-meta">
-        <span>⏱️ ${article.readTime} min</span>
-        <span>${formatDate(article.pubDate)}</span>
+      <div class="card-footer" style="display: flex; justify-content: space-between; align-items: center; margin-top: 10px;">
+        <span class="card-source" style="font-size: 0.75rem; color: var(--accent-hover); font-weight: 600;">📰 ${article.sourceName}</span>
+        <span class="card-time" style="font-size: 0.75rem; color: var(--text-secondary);">⏱️ ${article.readTime} min</span>
       </div>
-      <div class="card-actions">
+      <div class="card-actions" style="margin-top: 10px;">
         <button class="action-btn btn-read">📖 Leitura</button>
         <button class="action-btn btn-save">${isSaved ? '🔖 Salvo' : '📌 Salvar'}</button>
         <button class="action-btn btn-like" title="Mais disso">👍🏻</button>
@@ -507,7 +464,7 @@ function createNewsCard(article, isVip) {
 }
 
 /* ==========================================================================
-   8. FEEDBACK E HÁBITOS (PAINEL DE ESTATÍSTICAS)
+   FEEDBACK E HÁBITOS
    ========================================================================== */
 function feedbackLike(article) {
   const words = article.title.split(' ').filter(w => w.length > 4);
@@ -591,7 +548,7 @@ function shareToWhatsApp(article) {
 }
 
 /* ==========================================================================
-   9. LEITURA LIMPA (READER VIEW)
+   LEITURA LIMPA (READER VIEW)
    ========================================================================== */
 function openReaderMode(article) {
   recordReadingHabit(article);
@@ -613,7 +570,7 @@ function openReaderMode(article) {
       ${article.imageUrl ? `<div class="reader-img-container"><img src="${article.imageUrl}" alt="Imagem" style="width:100%; border-radius:12px; margin-bottom:16px; object-fit:cover; max-height:350px;"></div>` : ''}
       <h2 style="font-size: 1.4rem; margin-bottom: 12px; line-height: 1.35; color: var(--text-primary); font-weight:700;">${article.title}</h2>
       <p style="color: var(--text-secondary); font-size: 0.85rem; margin-bottom: 20px;">
-        Publicado em ${formatDate(article.pubDate)} • Tempo de leitura: ${article.readTime} min
+        Fonte: <strong>${article.sourceName}</strong> • Publicado em ${formatDate(article.pubDate)} • Tempo de leitura: ${article.readTime} min
       </p>
 
       <div style="background: rgba(37, 99, 235, 0.1); border-left: 4px solid var(--accent-primary); padding: 14px 18px; border-radius: 8px; margin-bottom: 24px;">
@@ -696,7 +653,7 @@ function parseKeywords(stringInput) {
 }
 
 /* ==========================================================================
-   10. EVENTOS DA INTERFACE
+   EVENTOS DA INTERFACE
    ========================================================================== */
 function setupEventListeners() {
   if (btnToggleOled) {
