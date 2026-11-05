@@ -26,8 +26,8 @@
       </header>
 
       <div class="custom-keywords-box">
-        <label for="onboarding-keywords"><strong>Tópicos e Times Favoritos:</strong></label>
-        <input type="text" id="onboarding-keywords" value="Internacional, Inter, Colorado, UFC, economia, política">
+        <label for="onboarding-keywords"><strong>Tópicos e Termos de Destaque:</strong></label>
+        <input type="text" id="onboarding-keywords" value="família, saúde, economia, brasil">
       </div>
 
       <div class="category-selection-container">
@@ -61,7 +61,7 @@
     </div>
   </header>
 
-  <!-- BARRA DE FILTROS POR CATEGORIAS (No PC fica no topo; no mobile fica oculta pois vai para o menu) -->
+  <!-- BARRA DE FILTROS POR CATEGORIAS (Topo no PC) -->
   <nav id="category-filter-bar" class="category-filter-bar" aria-label="Filtro de Categorias"></nav>
 
   <!-- CARROSSEL DE NOTÍCIAS -->
@@ -96,17 +96,15 @@
       <button class="nav-item" data-view="settings"><span class="nav-icon">⚙️</span> Configurações e Fontes</button>
     </nav>
 
-    <!-- SEÇÃO DE CATEGORIAS DENTRO DO MENU (Ideal para Mobile) -->
+    <!-- SEÇÃO DE CATEGORIAS NO MENU (Ideal para Mobile) -->
     <div class="sidebar-section" style="padding: 0 15px; margin-top: 15px;">
       <h3 style="font-size: 0.78rem; color: var(--text-secondary); margin-bottom: 8px; text-transform: uppercase; letter-spacing: 0.5px;">Editorias</h3>
-      <div id="sidebar-categories-container" style="display: flex; flex-direction: column; gap: 4px;">
-        <!-- Injetado dinamicamente via script.js -->
-      </div>
+      <div id="sidebar-categories-container" style="display: flex; flex-direction: column; gap: 4px;"></div>
     </div>
 
     <!-- RÓTULO DE VERSÃO DO APP -->
     <div class="sidebar-footer" style="padding: 15px; border-top: 1px solid var(--card-border); margin-top: auto; font-size: 0.75rem; color: var(--text-secondary); text-align: center;">
-      Meu Feed • v1.4.1
+      Meu Feed • v1.4.2
     </div>
   </aside>
 
